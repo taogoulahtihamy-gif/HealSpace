@@ -1,0 +1,3607 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #eef3fb;
+  --card: rgba(255, 255, 255, 0.94);
+  --card-elevated: rgba(255, 255, 255, 0.98);
+  --card-soft: #f8fafc;
+  --text: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+  --primary: #2563eb;
+  --purple: #7c3aed;
+  --danger: #dc2626;
+  --danger-bg: #fff1f2;
+  --success: #16a34a;
+  --shadow: 0 18px 50px rgba(15, 23, 42, 0.1);
+}
+
+/* Mode sombre préparé (ThemeContext bascule data-theme sur <html>).
+   Le mode clair ci-dessus reste inchangé et reste le thème par défaut. */
+[data-theme="dark"] {
+  /* Fond principal : bleu-nuit profond, jamais noir pur — lisible longtemps,
+     dans l'esprit Linear/Notion plutôt qu'un simple #000. */
+  --bg: #0f172a;
+  /* Carte = une couche distincte et nettement plus claire que le fond,
+     légèrement translucide pour garder le glassmorphism déjà en place. */
+  --card: rgba(30, 41, 59, 0.92);
+  /* Surface élevée (menus, dropdowns, popovers) : encore un cran plus clair,
+     pour une vraie hiérarchie de profondeur façon Discord. */
+  --card-elevated: #243044;
+  /* Surface "douce" (inputs, pastilles, icônes) : entre --bg et --card,
+     remplace les anciens gris clairs codés en dur (#f8fafc etc.). */
+  --card-soft: #1a2335;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  /* Bordures quasi invisibles, jamais un gris "sale" : un voile blanc très
+     léger, comme sur X / Linear. */
+  --line: rgba(255, 255, 255, 0.08);
+  --primary: #60a5fa;
+  --purple: #a78bfa;
+  --danger: #f87171;
+  --danger-bg: rgba(248, 113, 113, 0.14);
+  --success: #4ade80;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* Voile de fond des modales légèrement plus profond en dark mode, pour que
+   la carte de la modale se détache nettement plutôt que de se fondre dans
+   un overlay identique au thème clair. */
+[data-theme="dark"] .modal-overlay {
+  background: rgba(2, 6, 16, 0.72);
+}
+
+[data-theme="dark"] .searchbar,
+[data-theme="dark"] .page-searchbar,
+[data-theme="dark"] .top-actions button {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* Le rose pâle du panic-card (mode clair) devient un liseré rouge très
+   doux en dark mode plutôt qu'une bordure trop claire et "sale". */
+[data-theme="dark"] .panic-card {
+  border-color: rgba(248, 113, 113, 0.3);
+}
+
+/* Quelques surfaces ont besoin d'un fond légèrement différent de --card en
+   mode sombre pour rester lisibles (inputs, dropdowns) sans toucher au mode
+   clair : on les fait pointer vers --bg, qui est déjà la valeur la plus
+   sombre, exactement comme en mode clair (où --bg est plus clair que --card). */
+
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.17), transparent 32%),
+    radial-gradient(circle at top right, rgba(124, 58, 237, 0.14), transparent 34%),
+    var(--bg);
+  color: var(--text);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+/* Base de lisibilité : sans ces règles, les champs de saisie et les boutons
+   sans couleur explicite héritent du rendu par défaut du navigateur (souvent
+   un noir quasi illisible en mode sombre). Toute règle plus spécifique
+   ailleurs dans ce fichier continue de l'emporter normalement. */
+button,
+input,
+textarea,
+select {
+  color: var(--text);
+}
+
+::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+/* Hiérarchie typographique de base. Ne fixe jamais de marge (chaque
+   composant gère déjà la sienne explicitement plus bas dans ce fichier) :
+   uniquement taille, graisse et interlignage, pour que tout titre du
+   projet s'inscrive dans la même échelle, même sans règle dédiée. */
+h1 {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+h2 {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+h3 {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+h4 {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+button {
+  cursor: pointer;
+}
+
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.15fr 420px;
+  gap: 40px;
+  padding: 48px;
+  align-items: center;
+}
+
+.login-hero {
+  color: white;
+  min-height: 680px;
+  border-radius: 40px;
+  padding: 54px;
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.97), rgba(124, 58, 237, 0.97)),
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.28), transparent 20%);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.login-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.logo-mark,
+.brand-mark {
+  display: grid;
+  place-items: center;
+  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+}
+
+.logo-mark {
+  width: 58px;
+  height: 58px;
+  border-radius: 20px;
+  background: white;
+  color: var(--primary);
+}
+
+.login-hero h1 {
+  font-size: clamp(42px, 6vw, 74px);
+  line-height: 0.95;
+  max-width: 820px;
+  margin: 42px 0 20px;
+}
+
+.login-hero p {
+  font-size: 19px;
+  line-height: 1.7;
+  max-width: 700px;
+  opacity: 0.92;
+}
+
+.feature-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.feature-pill {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  font-weight: 800;
+}
+
+.auth-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 36px;
+  padding: 34px;
+  box-shadow: var(--shadow);
+}
+
+.auth-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+}
+
+.auth-card h2 {
+  margin: 20px 0 6px;
+  font-size: 34px;
+}
+
+.auth-card p,
+.auth-card small {
+  color: var(--muted);
+}
+
+.auth-card label {
+  display: block;
+  margin: 22px 0 8px;
+  font-weight: 800;
+}
+
+.auth-card input {
+  width: 100%;
+  height: 52px;
+  border-radius: 17px;
+  border: 1px solid var(--line);
+  padding: 0 16px;
+  background: var(--card-soft);
+  outline: 0;
+}
+
+.auth-card button {
+  width: 100%;
+  height: 54px;
+  margin: 26px 0 14px;
+  border: 0;
+  border-radius: 18px;
+  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  font-weight: 900;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 280px minmax(420px, 760px) 360px;
+  grid-template-rows: 76px 1fr;
+  gap: 24px;
+  padding: 0 24px 24px;
+}
+
+.topbar {
+  grid-column: 1 / 4;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  backdrop-filter: blur(18px);
+}
+
+.brand {
+  width: 258px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 900;
+  font-size: 24px;
+  color: var(--primary);
+}
+
+.brand-mark {
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.35);
+}
+
+.searchbar {
+  flex: 1;
+  height: 48px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
+.searchbar input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  width: 100%;
+}
+
+.top-actions {
+  width: 320px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.top-actions button {
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  border: 0;
+  background: var(--card);
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+.top-actions button:hover {
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.top-actions .publish-btn {
+  width: auto;
+  padding: 0 18px;
+  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  font-weight: 800;
+}
+
+/* Le texte du bouton Publier doit toujours rester blanc et lisible, quel
+   que soit l'état : la règle générale .top-actions button:hover (qui change
+   la couleur en var(--primary)) a une spécificité plus forte que le simple
+   "color: white" ci-dessus et l'écrasait silencieusement au survol, rendant
+   le texte presque invisible sur le dégradé. On fixe explicitement chaque
+   état pour empêcher toute régression future. */
+.top-actions .publish-btn,
+.top-actions .publish-btn:hover,
+.top-actions .publish-btn:focus-visible,
+.top-actions .publish-btn:active {
+  color: white;
+}
+.top-actions .publish-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+.top-actions .publish-btn:active {
+  filter: brightness(0.96);
+}
+.top-actions .publish-btn:disabled {
+  filter: grayscale(0.3);
+}
+
+.left-sidebar,
+.right-sidebar {
+  position: sticky;
+  top: 100px;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-card,
+.challenge-card,
+.panel,
+.panic-card,
+.composer,
+.post-card,
+.hero-card,
+.story-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  border-radius: 28px;
+}
+
+.profile-card {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-card strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.profile-card span,
+.post-header span,
+.group-row span,
+.message-row p,
+.message-row > span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: white;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  flex: 0 0 auto;
+}
+
+.avatar.large {
+  width: 50px;
+  height: 50px;
+}
+
+.menu-item {
+  min-height: 50px;
+  border-radius: 18px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  font-weight: 800;
+  text-align: left;
+  /* .menu-item est un <NavLink> (donc un <a>) : on retire tout style de lien
+     hérité du navigateur (soulignement, couleur de lien, curseur texte). */
+  text-decoration: none;
+  cursor: pointer;
+  /* Transition fluide pour le hover premium ci-dessous. */
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  background: rgba(37, 99, 235, 0.07);
+  color: var(--primary);
+  transform: translateX(4px);
+  text-decoration: none;
+}
+
+.menu-item.danger:hover,
+.menu-item.danger:focus-visible {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.menu-item.active {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--primary);
+}
+
+/* L'état actif reste prioritaire et bien visible même au survol. */
+.menu-item.active:hover,
+.menu-item.active:focus-visible {
+  background: rgba(37, 99, 235, 0.14);
+  color: var(--primary);
+  transform: translateX(4px);
+}
+
+.menu-item.danger {
+  color: var(--danger);
+}
+
+.challenge-card {
+  padding: 18px;
+}
+
+.challenge-card p {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.challenge-card button,
+.panic-card button {
+  width: 100%;
+  height: 42px;
+  border-radius: 15px;
+  border: 0;
+  font-weight: 900;
+}
+
+.challenge-card button {
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  color: white;
+}
+
+.feed {
+  padding-bottom: 90px;
+}
+
+.hero-card {
+  min-height: 210px;
+  padding: 28px;
+  margin-bottom: 18px;
+  color: white;
+  border: 0;
+  background:
+    linear-gradient(135deg, rgba(37, 99, 235, 0.96), rgba(124, 58, 237, 0.96)),
+    linear-gradient(45deg, transparent, rgba(255,255,255,0.18));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 12px;
+  font-weight: 900;
+  opacity: 0.85;
+}
+
+.hero-card h1 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.03;
+}
+
+.hero-card p {
+  max-width: 470px;
+  line-height: 1.6;
+  opacity: 0.92;
+}
+
+.hero-card button {
+  height: 50px;
+  border: 0;
+  border-radius: 18px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--primary);
+  background: white;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.stories {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.story-card {
+  height: 108px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.story-card span {
+  font-size: 28px;
+}
+
+.story-card.active {
+  border: 2px solid var(--primary);
+}
+
+.composer,
+.post-card,
+.panel,
+.panic-card {
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.composer-top,
+.post-header,
+.message-row,
+.group-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.composer-input {
+  flex: 1;
+  height: 48px;
+  border: 0;
+  background: var(--card-soft);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 0 18px;
+  text-align: left;
+}
+
+.composer-actions,
+.post-actions,
+.filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.composer-actions button,
+.post-actions button,
+.filters button {
+  min-height: 42px;
+  border-radius: 15px;
+  padding: 0 14px;
+  border: 0;
+  background: var(--card-soft);
+  color: var(--text);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filters {
+  margin-bottom: 18px;
+}
+
+.filters button.selected {
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  color: white;
+}
+
+.post-header {
+  align-items: flex-start;
+}
+
+.post-header > div:nth-child(2) {
+  flex: 1;
+  display: grid;
+  gap: 4px;
+}
+
+.ghost-btn {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 12px;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.ghost-btn:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.post-content {
+  font-size: 16px;
+  line-height: 1.68;
+  margin: 18px 0;
+}
+
+.post-content span {
+  font-size: 24px;
+}
+
+.post-stats {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  margin-top: 14px;
+  padding: 12px 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.post-actions {
+  justify-content: space-between;
+}
+
+.panic-card {
+  background: var(--danger-bg);
+  border-color: #fecdd3;
+}
+
+.panic-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  color: var(--danger);
+  background: var(--card-elevated);
+}
+
+.panic-card h3 {
+  color: var(--danger);
+  margin-bottom: 8px;
+}
+
+.panic-card p,
+.panel p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.panic-card button {
+  color: white;
+  background: var(--danger);
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-title h3 {
+  margin: 0 0 10px;
+}
+
+.group-row {
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.group-row > div:nth-child(2) {
+  flex: 1;
+  display: grid;
+  gap: 3px;
+}
+
+.group-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  background: var(--card-soft);
+  font-size: 22px;
+}
+
+.group-row button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--primary);
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.message-row {
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.message-row > div:nth-child(2) {
+  min-width: 0;
+  flex: 1;
+}
+
+.message-row p {
+  margin: 3px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-nav {
+  display: none;
+}
+
+@media (max-width: 1240px) {
+  .app-shell {
+    grid-template-columns: 92px minmax(420px, 1fr) 330px;
+  }
+
+  .brand {
+    width: 70px;
+  }
+
+  .brand span,
+  .profile-card div,
+  .menu-item span,
+  .challenge-card {
+    display: none;
+  }
+
+  .menu-item {
+    justify-content: center;
+    padding: 0;
+  }
+}
+
+@media (max-width: 980px) {
+  .app-shell {
+    grid-template-columns: 92px 1fr;
+  }
+
+  .topbar {
+    grid-column: 1 / 3;
+  }
+
+  .right-sidebar {
+    display: none;
+  }
+
+  .top-actions {
+    width: auto;
+  }
+
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .login-hero {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell {
+    display: block;
+    padding: 0 12px 86px;
+  }
+
+  .topbar {
+    height: auto;
+    padding: 12px 0;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    width: auto;
+  }
+
+  .brand span {
+    display: inline;
+  }
+
+  .searchbar {
+    order: 3;
+    flex: 0 0 100%;
+  }
+
+  .top-actions button:not(.publish-btn) {
+    display: none;
+  }
+
+  .left-sidebar {
+    display: none;
+  }
+
+  .hero-card {
+    display: block;
+    min-height: auto;
+  }
+
+  .hero-card button {
+    margin-top: 18px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .stories {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .story-card:last-child {
+    grid-column: span 2;
+  }
+
+  .post-actions button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .mobile-nav {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    height: 64px;
+    border-radius: 24px;
+    background: var(--card-elevated);
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    color: var(--text);
+    z-index: 40;
+  }
+
+  .mobile-plus {
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    border-radius: 18px;
+    color: white;
+    background: linear-gradient(135deg, var(--primary), var(--purple));
+  }
+
+  .login-page {
+    padding: 16px;
+  }
+
+  .login-hero {
+    padding: 28px;
+    border-radius: 28px;
+  }
+
+  .auth-card {
+    padding: 24px;
+    border-radius: 28px;
+  }
+}
+
+/* ==========================================================
+   AJOUTS — refonte progressive (navigation, popup, nouvelles pages)
+   Rien au-dessus de ce bloc n'a été modifié.
+   ========================================================== */
+
+/* profile-card est devenu un <NavLink> (donc un <a>) : on retire le style
+   de lien par défaut pour rester identique au rendu original. */
+a.profile-card {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+/* message-row est devenu un <button> dans RightSidebar pour être cliquable :
+   on annule les styles natifs de bouton pour garder le rendu d'origine. */
+button.message-row {
+  width: 100%;
+  background: none;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.mobile-plus-btn {
+  background: none;
+  border: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+/* Génériques boutons (common/Button.jsx) */
+.btn {
+  border: 0;
+  border-radius: 14px;
+  padding: 10px 18px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.btn:hover {
+  transform: translateY(-1px);
+}
+.btn-primary {
+  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
+}
+.btn-ghost {
+  background: var(--card);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+.btn-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* En-tête générique de page (PageHeader) */
+.page-header {
+  margin-bottom: 18px;
+}
+.page-header h1 {
+  margin: 0 0 6px;
+  font-size: clamp(24px, 3vw, 32px);
+}
+.page-header p {
+  margin: 0;
+  color: var(--muted);
+}
+
+/* État vide générique (EmptyState) */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--muted);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+}
+.empty-state h3 {
+  margin: 0;
+  color: var(--text);
+}
+
+/* ---------- Modal générique (Modal.jsx) ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+  padding: 20px;
+  animation: fadeIn 0.18s ease;
+}
+.modal-card {
+  width: min(520px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  animation: slideUp 0.22s ease;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+}
+.modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+.modal-body {
+  padding: 22px;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---------- Popup de publication (PublishModal.jsx) ---------- */
+.publish-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.publish-form-author {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.publish-form-author strong {
+  display: block;
+}
+.publish-form-author span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.publish-form textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+.publish-field label {
+  display: block;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+.mood-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mood-chip {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mood-chip.selected {
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  color: white;
+  border-color: transparent;
+}
+.publish-field select {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+.anonymous-toggle {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  justify-content: center;
+}
+.anonymous-toggle.active {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: transparent;
+}
+.publish-submit {
+  border: 0;
+  border-radius: 14px;
+  padding: 14px;
+  font-weight: 800;
+  color: white;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+}
+.publish-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---------- Page Groupes ---------- */
+.group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+.group-card-full {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+.group-card-full strong {
+  display: block;
+}
+.group-card-full span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ---------- Page Messages ---------- */
+.messages-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  min-height: 480px;
+}
+.conversation-list {
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+}
+.conversation-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+.conversation-item.active {
+  background: rgba(37, 99, 235, 0.08);
+}
+.conversation-item strong {
+  display: block;
+}
+.conversation-item p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+.conversation-item > span {
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: auto;
+}
+.chat-window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.chat-header {
+  padding: 16px;
+  border-bottom: 1px solid var(--line);
+}
+.chat-thread {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+}
+.chat-bubble {
+  max-width: 70%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 14px;
+}
+.chat-bubble span {
+  display: block;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.chat-bubble.them {
+  background: var(--bg);
+  align-self: flex-start;
+}
+.chat-bubble.me {
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  color: white;
+  align-self: flex-end;
+}
+.chat-bubble.me span {
+  color: rgba(255, 255, 255, 0.75);
+}
+.chat-input {
+  display: flex;
+  gap: 10px;
+  padding: 14px;
+  border-top: 1px solid var(--line);
+}
+.chat-input input {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: var(--bg);
+  color: var(--text);
+}
+.chat-input button {
+  border: 0;
+  border-radius: 999px;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  color: white;
+}
+
+/* ---------- Page Journal ---------- */
+.journal-row,
+.resource-row,
+.emergency-row,
+.notification-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.journal-row:last-child,
+.resource-row:last-child,
+.emergency-row:last-child,
+.notification-row:last-child {
+  border-bottom: 0;
+}
+.journal-mood {
+  font-size: 24px;
+}
+.journal-row p,
+.resource-row span,
+.emergency-row span {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ---------- Page Ressources / Urgence ---------- */
+.resource-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  color: var(--primary);
+}
+.resource-row button,
+.emergency-row button {
+  margin-left: auto;
+}
+.panic-card-full {
+  margin-bottom: 18px;
+}
+
+/* ---------- Page Notifications ---------- */
+.notification-icon {
+  font-size: 22px;
+}
+.notification-row.unread {
+  background: rgba(37, 99, 235, 0.06);
+  border-radius: 14px;
+}
+.notification-row p {
+  margin: 0;
+}
+.notification-row span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ---------- Page Profil ---------- */
+.profile-header-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--card);
+  border-radius: 22px;
+  box-shadow: var(--shadow);
+  padding: 22px;
+  margin-bottom: 16px;
+}
+.profile-header-card h2 {
+  margin: 0;
+}
+.profile-header-card span {
+  color: var(--muted);
+}
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.profile-stat {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+  text-align: center;
+}
+.profile-stat strong {
+  display: block;
+  font-size: 22px;
+}
+.profile-stat span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ---------- Page Paramètres ---------- */
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.settings-row:last-child {
+  border-bottom: 0;
+}
+.settings-row strong {
+  display: block;
+  margin-bottom: 4px;
+}
+.settings-row span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.theme-toggle {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+/* MobileNav : les icônes sont maintenant des NavLink/button cliquables */
+.mobile-nav a {
+  color: inherit;
+  display: flex;
+  text-decoration: none;
+}
+.mobile-nav a.active {
+  color: var(--primary);
+}
+
+/* responsive : centrer les stats sur très petit écran */
+@media (max-width: 720px) {
+  .messages-layout {
+    grid-template-columns: 1fr;
+  }
+  .conversation-list {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    max-height: 220px;
+  }
+  .profile-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ---------- Bouton "Soutenir" (PostCard.jsx) ----------
+   Ajout ciblé sur .support-btn uniquement : n'affecte ni "Commenter",
+   ni "Partager", ni aucun autre bouton de .post-actions. */
+.support-btn {
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.support-btn.active {
+  background: rgba(37, 99, 235, 0.12);
+  color: var(--primary);
+}
+
+.support-btn.pop {
+  animation: support-pop 0.26s ease;
+}
+
+@keyframes support-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* ---------- Commentaires (CommentSection.jsx / PostCard.jsx) ----------
+   Ajouts ciblés : n'affectent ni .post-card, ni .post-actions existants. */
+
+.comment-toggle-btn {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.comment-toggle-btn.active {
+  background: rgba(124, 58, 237, 0.12);
+  color: var(--purple);
+}
+
+.comment-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: comment-section-in 0.22s ease;
+}
+
+@keyframes comment-section-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.comment-empty {
+  margin: 4px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.comment-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.comment-bubble {
+  background: var(--bg);
+  border-radius: 16px;
+  padding: 10px 14px;
+  flex: 1;
+}
+
+.comment-bubble strong {
+  display: block;
+  font-size: 13px;
+}
+
+.comment-bubble p {
+  margin: 2px 0 4px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.comment-bubble span {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.comment-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.comment-form input {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.comment-form button {
+  border: 0;
+  border-radius: 999px;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  color: white;
+}
+
+.comment-form button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Mobile : la zone de commentaire reste lisible sans casser la carte post */
+@media (max-width: 720px) {
+  .comment-list {
+    max-height: 220px;
+  }
+
+  .comment-form input {
+    padding: 9px 14px;
+  }
+}
+
+/* ==========================================================
+   AJOUTS — lot fonctionnalités sociales (édition, suppression,
+   partage, image, filtres, recherche, notifications, groupes,
+   profil, urgence). Rien au-dessus de ce bloc n'a été modifié,
+   à l'exception du bloc .profile-stats déjà signalé plus haut.
+   ========================================================== */
+
+/* ---------- Menu "..." du post (Modifier / Supprimer) ---------- */
+.post-menu {
+  position: relative;
+  margin-left: auto;
+}
+
+.post-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  background: var(--card-elevated);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 6px;
+  min-width: 180px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: comment-section-in 0.18s ease;
+}
+
+.post-menu-dropdown button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 10px;
+  border: 0;
+  background: none;
+  border-radius: 10px;
+  text-align: left;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.post-menu-dropdown button:hover {
+  background: var(--bg);
+}
+
+.post-menu-dropdown button.danger {
+  color: var(--danger);
+}
+
+.post-menu-empty {
+  padding: 9px 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+/* ---------- Confirmation de suppression (ConfirmDialog.jsx) ---------- */
+.confirm-dialog p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ---------- Image fictive dans un post (PostImagePicker / PostCard) ---------- */
+.image-picker {
+  display: flex;
+  gap: 10px;
+}
+
+.image-option {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  display: grid;
+  place-items: center;
+  color: white;
+}
+
+.image-option.selected {
+  border-color: var(--primary);
+}
+
+.post-image-1 { background: linear-gradient(135deg, #fde68a, #fb923c); }
+.post-image-2 { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+.post-image-3 { background: linear-gradient(135deg, #6ee7b7, #059669); }
+.post-image-4 { background: linear-gradient(135deg, #f0abfc, #a855f7); }
+
+.post-image {
+  width: 100%;
+  height: 160px;
+  border-radius: 16px;
+  margin-top: 12px;
+}
+
+/* ---------- Carte de post imbriquée (partage dans HealSpace) ---------- */
+.shared-post-preview {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  background: var(--bg);
+}
+
+.shared-post-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.shared-post-preview p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* ---------- Popup de partage (SharePostModal.jsx) ---------- */
+.share-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.share-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-weight: 700;
+}
+
+.share-divider {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.share-option-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.share-option-block label {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.share-option-block textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+/* ---------- Notifications locales (Toast.jsx) ---------- */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 200;
+  max-width: 320px;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+  animation: toast-in 0.22s ease;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.toast-icon {
+  display: flex;
+  color: var(--primary);
+}
+
+.toast-message {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.toast-close {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.toast-delete {
+  border-left-color: var(--danger);
+}
+.toast-delete .toast-icon {
+  color: var(--danger);
+}
+
+.toast-share {
+  border-left-color: var(--purple);
+}
+.toast-share .toast-icon {
+  color: var(--purple);
+}
+
+/* ---------- Page Groupes : onglets + bouton quitter ---------- */
+.group-tabs {
+  margin-bottom: 14px;
+}
+
+/* ---------- Page Profil : bio + bouton modifier ---------- */
+.profile-header-card {
+  flex-wrap: wrap;
+}
+
+.profile-bio {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  max-width: 420px;
+  line-height: 1.5;
+}
+
+.profile-edit-btn {
+  margin-left: auto;
+}
+
+/* ---------- Page Urgence : respiration guidée + contact de confiance ---------- */
+.breathing-exercise {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 0;
+}
+
+.breathing-phase {
+  font-size: 28px;
+  font-weight: 900;
+  color: white;
+  animation: breathing-pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes breathing-pulse {
+  from { opacity: 0.7; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1.04); }
+}
+
+.breathing-timer {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.emergency-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.trusted-contact-panel {
+  width: 100%;
+  margin-top: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trusted-contact-panel span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.emergency-disclaimer {
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 18px;
+}
+
+/* Responsive : dropdown du post et notifications restent lisibles sur mobile */
+@media (max-width: 720px) {
+  .post-menu-dropdown {
+    right: -8px;
+    min-width: 160px;
+  }
+
+  .toast-container {
+    left: 12px;
+    right: 12px;
+    top: 12px;
+    max-width: none;
+  }
+
+  .profile-edit-btn {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ==========================================================
+   AJOUTS — passage UX/UI global (identité HealSpace, design
+   system, accessibilité, micro-interactions). Rien au-dessus
+   de ce bloc n'est modifié : uniquement des ajouts ciblés.
+   ========================================================== */
+
+/* ---------- Accessibilité : focus clavier visible partout ---------- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+/* ---------- Micro-interactions globales (boutons) ---------- */
+button {
+  transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+button:active {
+  transform: scale(0.97);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+button:disabled:active {
+  transform: none;
+}
+
+/* ---------- Glassmorphism léger sur les surfaces principales ---------- */
+.panel,
+.post-card,
+.composer,
+.modal-card {
+  backdrop-filter: blur(14px);
+}
+
+/* ---------- Hover "lift" doux sur les cartes (Facebook/Airbnb-like) ---------- */
+.post-card,
+.group-card-full,
+.resource-row {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.post-card:hover,
+.group-card-full:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 22px 55px rgba(15, 23, 42, 0.12);
+}
+
+/* ---------- Actions de post façon Facebook : pleine largeur, équilibrées ---------- */
+.post-actions {
+  gap: 16px;
+  padding-top: 14px;
+}
+.post-actions button {
+  flex: 1;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+.post-actions .support-btn,
+.post-actions .comment-toggle-btn,
+.post-actions .share-btn {
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+.post-actions button:hover {
+  background: var(--bg);
+}
+.post-actions .support-btn.active:hover {
+  background: rgba(37, 99, 235, 0.16);
+}
+.post-actions .comment-toggle-btn.active:hover {
+  background: rgba(124, 58, 237, 0.18);
+}
+
+/* ---------- Bulles de commentaire : micro-interaction au survol ---------- */
+.comment-bubble {
+  transition: background-color 0.2s ease;
+}
+.comment-item:hover .comment-bubble {
+  background: rgba(37, 99, 235, 0.06);
+}
+
+/* ---------- Barre de recherche autonome (pages Groupes / Ressources) ---------- */
+.page-searchbar {
+  height: 46px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  margin-bottom: 14px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.page-searchbar:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.page-searchbar input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  width: 100%;
+  color: var(--text);
+}
+
+/* ---------- Favoris (ResourcesPage) ---------- */
+.favorite-btn {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+}
+.favorite-btn.active {
+  color: var(--danger);
+}
+.favorite-btn:hover {
+  background: var(--bg);
+}
+
+/* ---------- Notifications : ligne cliquable + pastille non-lue ---------- */
+.notification-row {
+  cursor: pointer;
+  position: relative;
+}
+.notification-dot {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+/* ---------- Profil : couverture + badges de progression ---------- */
+.profile-header-card {
+  padding: 0 0 22px;
+  overflow: hidden;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+}
+.profile-cover {
+  height: 110px;
+  margin: 0 0 -34px;
+  background: linear-gradient(120deg, var(--primary), var(--purple));
+}
+.profile-header-body {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 0 22px;
+  flex-wrap: wrap;
+}
+.profile-header-body .avatar.large {
+  border: 4px solid var(--card);
+  box-shadow: var(--shadow);
+}
+.profile-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.profile-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--primary);
+}
+
+/* ---------- Journal : barre de progression hebdomadaire ---------- */
+.journal-progress-card {
+  margin-bottom: 16px;
+}
+.journal-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.journal-progress-header strong {
+  color: var(--text);
+  font-size: 15px;
+}
+.progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary), var(--purple));
+  transition: width 0.4s ease;
+}
+
+/* ---------- Urgence : plan de crise, ton rassurant ---------- */
+.crisis-steps {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.crisis-steps li::marker {
+  color: var(--primary);
+  font-weight: 800;
+}
+
+/* Responsive : design system additionnel reste cohérent sur mobile */
+@media (max-width: 720px) {
+  .post-actions button {
+    font-size: 13px;
+    padding: 0 8px;
+  }
+  .profile-header-body {
+    padding: 0 16px;
+  }
+  .profile-cover {
+    height: 84px;
+  }
+}
+
+/* ==========================================================
+   AJOUTS — sprint "frontend exceptionnel" (menus enrichis,
+   commentaires avec réponses, composer premium, cartes groupe,
+   profil avec timeline, journal avec mood tracker, urgence avec
+   respiration animée). Rien au-dessus n'est modifié.
+   ========================================================== */
+
+/* ---------- Entrée animée des nouvelles publications (façon Threads) ---------- */
+.post-card-animated {
+  animation: post-card-in 0.35s ease;
+}
+@keyframes post-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.post-card-hidden {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.post-menu-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 4px 0;
+}
+
+.animated-counter {
+  display: inline-block;
+  min-width: 1ch;
+}
+
+/* ---------- Commentaires enrichis (bulles, réponses, édition) ---------- */
+.comment-bubble-wrap {
+  flex: 1;
+}
+
+.comment-bubble-actions {
+  display: flex;
+  gap: 14px;
+  margin: 4px 2px 0;
+}
+.comment-bubble-actions button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.comment-bubble-actions button:hover {
+  color: var(--primary);
+}
+.comment-bubble-actions button.danger:hover {
+  color: var(--danger);
+}
+
+.comment-thread {
+  margin-bottom: 6px;
+}
+
+.comment-thread-toggle {
+  background: none;
+  border: 0;
+  margin: 4px 0 0 44px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.comment-replies {
+  margin-left: 36px;
+  padding-left: 14px;
+  border-left: 2px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+  animation: comment-section-in 0.18s ease;
+}
+
+.comment-reply-form,
+.comment-edit-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 0 44px;
+}
+.comment-reply-form input,
+.comment-edit-form input {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+}
+.comment-reply-form button,
+.comment-edit-form button {
+  border: 0;
+  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  color: var(--text);
+}
+.comment-reply-form button[type="submit"],
+.comment-edit-form button[type="submit"] {
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  color: white;
+}
+
+/* ---------- Composer premium (PublishModal.jsx) ---------- */
+.publish-textarea-wrap {
+  position: relative;
+}
+.publish-textarea-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+}
+.emoji-toggle-btn {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+.emoji-toggle-btn:hover {
+  background: var(--bg);
+  color: var(--primary);
+}
+.char-counter {
+  font-size: 12px;
+  color: var(--muted);
+}
+.char-counter.over-limit {
+  color: var(--danger);
+  font-weight: 800;
+}
+.emoji-picker {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  padding: 10px;
+  margin-top: 6px;
+  background: var(--bg);
+  border-radius: 14px;
+  animation: comment-section-in 0.18s ease;
+}
+.emoji-picker button {
+  border: 0;
+  background: none;
+  font-size: 20px;
+  padding: 6px;
+  border-radius: 10px;
+}
+.emoji-picker button:hover {
+  background: var(--card);
+}
+
+.publish-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.publish-preview-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.publish-preview-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 14px;
+  background: var(--bg);
+}
+.publish-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.publish-preview-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.publish-preview-image {
+  margin-top: 10px;
+  height: 90px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  opacity: 0.5;
+}
+.scheduled-input-disabled {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 14px;
+  background: var(--bg);
+  color: var(--muted);
+}
+
+/* ---------- Cartes de groupe "communauté" ---------- */
+.group-card-modern {
+  padding: 0;
+  overflow: hidden;
+  align-items: stretch;
+}
+.group-card-cover {
+  height: 64px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(120deg, var(--primary), var(--purple));
+}
+.group-card-emoji {
+  font-size: 26px;
+}
+.group-card-body {
+  padding: 16px 18px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.group-card-description {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.group-card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.group-card-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.group-card-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--success);
+  font-weight: 700;
+}
+.group-card-live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  animation: live-pulse 1.4s ease-in-out infinite;
+}
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.group-card-cta {
+  margin-top: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+/* ---------- Profil : streak + timeline d'activité ---------- */
+.profile-streak {
+  background: rgba(249, 115, 22, 0.12);
+  color: #f97316;
+}
+.activity-timeline {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.activity-timeline li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.activity-icon {
+  font-size: 18px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.activity-timeline p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.activity-timeline span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---------- Journal : streak, mood graph, citation ---------- */
+.journal-streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f97316;
+}
+.mood-graph-card {
+  margin-bottom: 16px;
+}
+.mood-graph {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  height: 100px;
+  padding-top: 10px;
+}
+.mood-bar-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.mood-bar {
+  width: 22px;
+  border-radius: 8px 8px 4px 4px;
+  background: linear-gradient(180deg, var(--primary), var(--purple));
+  transition: height 0.3s ease;
+}
+.journal-quote {
+  margin: 4px 0 16px;
+  padding: 16px 20px;
+  border-left: 3px solid var(--primary);
+  background: var(--card);
+  border-radius: 0 16px 16px 0;
+  font-style: italic;
+  color: var(--muted);
+}
+
+/* ---------- Ressources : étiquette "Lu" ---------- */
+.read-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--success);
+  margin-left: 8px;
+}
+
+/* ---------- Notifications : barre d'actions + effacer ---------- */
+.notifications-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.notifications-tabs {
+  margin-bottom: 0;
+}
+.mark-all-read-btn {
+  white-space: nowrap;
+}
+.notification-delete {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+.notification-row:hover .notification-delete {
+  opacity: 1;
+}
+.notification-delete:hover {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+/* ---------- Urgence : cercle de respiration animé ---------- */
+.breathing-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  margin-bottom: 4px;
+  transition: transform 4s ease-in-out;
+}
+.breathing-circle-inspire {
+  transform: scale(1.5);
+  transition-duration: 4s;
+}
+.breathing-circle-retiens {
+  transform: scale(1.5);
+  transition-duration: 3s;
+}
+.breathing-circle-expire {
+  transform: scale(1);
+  transition-duration: 5s;
+}
+
+/* Responsive : nouveaux éléments restent lisibles sur mobile */
+@media (max-width: 720px) {
+  .comment-replies,
+  .comment-reply-form,
+  .comment-edit-form,
+  .comment-thread-toggle {
+    margin-left: 20px;
+  }
+  .emoji-picker {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  .notifications-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .notification-delete {
+    opacity: 1;
+  }
+}
+
+/* ==========================================================
+   AJOUTS — sprint "product polish" (composer premium, badges,
+   design system léger Switch/Badge, paramètres enrichis,
+   journal avec vraie persistance, surlignage de recherche).
+   Rien au-dessus de ce bloc n'est modifié, hors palette sombre
+   et variable --card-elevated déjà signalées plus haut.
+   ========================================================== */
+
+/* ---------- Champ de fichier natif caché ---------- */
+.visually-hidden-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* ---------- Switch ON/OFF (design system léger) ---------- */
+.ui-switch {
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--line);
+  border: 0;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+.ui-switch.checked {
+  background: linear-gradient(135deg, var(--primary), var(--purple));
+  justify-content: flex-end;
+}
+.ui-switch.disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.ui-switch-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease;
+}
+
+/* ---------- Badge (design system léger) ---------- */
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.ui-badge-solid {
+  margin-top: 10px;
+}
+
+/* ---------- Composer : switch anonyme + sélecteur photo ---------- */
+.composer-anonymous-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.composer-anonymous-hint {
+  margin: 10px 14px 0;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+/* ---------- Post : badges humeur/groupe + heure ---------- */
+.post-header-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+.post-time {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---------- Composer : upload réel d'image ---------- */
+.upload-trigger-btn {
+  width: 100%;
+  border: 1px dashed var(--line);
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--muted);
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.upload-trigger-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.uploaded-image-preview {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.uploaded-image-preview img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+}
+.uploaded-image-actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+}
+.publish-field-or {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin: 10px 0 8px;
+}
+.publish-preview-image-real {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+.post-image-real {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+}
+
+/* ---------- Composer : sélecteur de défi ---------- */
+.challenge-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.challenge-chip {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.challenge-chip.selected {
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  color: white;
+  border-color: transparent;
+}
+
+.anonymous-explainer {
+  margin: -6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---------- Commentaires : marqueur "modifié" ---------- */
+.comment-edited-tag {
+  color: var(--muted);
+  font-size: 11px;
+  font-style: italic;
+}
+
+/* ---------- Journal : CTA nouvelle étape ---------- */
+.journal-cta-card {
+  margin-bottom: 16px;
+}
+.journal-new-entry-btn {
+  width: 100%;
+  border: 1px dashed var(--line);
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.journal-entry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.journal-entry-form textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+.journal-entry-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ---------- Paramètres : sections + tag statique ---------- */
+.settings-static-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--bg);
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+/* ---------- Recherche : surlignage du terme trouvé ---------- */
+.search-highlight {
+  background: rgba(37, 99, 235, 0.22);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 0 2px;
+}
+
+/* Responsive : nouveaux éléments restent confortables sur mobile */
+@media (max-width: 720px) {
+  .composer-actions {
+    flex-wrap: wrap;
+  }
+  .uploaded-image-preview img {
+    height: 130px;
+  }
+  .challenge-picker .challenge-chip {
+    font-size: 12px;
+  }
+}
+
+/* ==========================================================
+   AJOUTS — Composer premium (sprint dédié uniquement à la
+   création de publication). Rien au-dessus de ce bloc n'est
+   modifié. Ces règles ne s'appliquent qu'aux classes du
+   Composer / PublishModal, sans toucher au reste de l'app.
+   ========================================================== */
+
+.composer-premium {
+  gap: 20px;
+}
+
+/* ---------- En-tête ---------- */
+.composer-header {
+  margin-bottom: 2px;
+}
+.composer-title {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 800;
+}
+.composer-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ---------- Zone de texte premium ---------- */
+.composer-textarea-wrap {
+  position: relative;
+}
+.composer-textarea {
+  width: 100%;
+  resize: none;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 16px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.6;
+  min-height: 90px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.composer-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+.composer-textarea-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+}
+.char-counter.near-limit {
+  color: #f97316;
+  font-weight: 800;
+}
+
+/* ---------- Bannière de brouillon ---------- */
+.draft-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: rgba(37, 99, 235, 0.08);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  animation: comment-section-in 0.2s ease;
+}
+.draft-banner-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ---------- Sélecteur d'humeur (cartes) ---------- */
+.mood-selector {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.mood-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: 1.5px solid var(--line);
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 10px 6px;
+  transition: transform 0.15s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+.mood-card-emoji {
+  font-size: 22px;
+}
+.mood-card-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: center;
+}
+.mood-card.selected {
+  color: white;
+}
+.mood-card.selected .mood-card-label {
+  color: white;
+}
+.mood-card.pop {
+  animation: mood-pop 0.22s ease;
+}
+@keyframes mood-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
+/* ---------- Sélecteur d'intention (choix exclusif) ---------- */
+.intent-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.intent-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.intent-option:hover {
+  border-color: var(--primary);
+}
+.intent-radio {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  flex-shrink: 0;
+  position: relative;
+  transition: border-color 0.2s ease;
+}
+.intent-option.selected {
+  border-color: var(--primary);
+  background: rgba(37, 99, 235, 0.06);
+}
+.intent-option.selected .intent-radio {
+  border-color: var(--primary);
+}
+.intent-option.selected .intent-radio::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.intent-emoji {
+  font-size: 16px;
+}
+
+/* ---------- Sélecteur de visibilité ---------- */
+.visibility-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.visibility-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.visibility-option.selected {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(37, 99, 235, 0.08);
+}
+.visibility-soon {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--card);
+  border-radius: 999px;
+  padding: 2px 6px;
+  margin-left: 2px;
+}
+
+/* ---------- Switch anonyme du Composer ---------- */
+.anonymous-switch-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.anonymous-switch-row strong {
+  display: block;
+  font-size: 14px;
+}
+.anonymous-switch-row span {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ---------- Pied du Composer ---------- */
+.composer-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+
+/* ---------- Bouton de publication premium ---------- */
+.publish-submit-premium {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.publish-spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: white;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Aperçu : humeur et défi affichés ---------- */
+.publish-preview-mood {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 800;
+}
+.publish-preview-challenge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.1);
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+/* Responsive : Composer reste confortable sur mobile */
+@media (max-width: 720px) {
+  .mood-selector {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .draft-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .draft-banner-actions {
+    justify-content: flex-end;
+  }
+}
+
+/* ==========================================================
+   AJOUTS — Sprint B : Feed Premium (cartes, actions sociales,
+   commentaires, menu, images, état vide, accessibilité,
+   micro-animations). Rien au-dessus de ce bloc n'est modifié.
+   ========================================================== */
+
+/* ---------- Carte de post : suppression douce ---------- */
+.post-card-deleting {
+  animation: post-card-out 0.26s ease forwards;
+  pointer-events: none;
+}
+@keyframes post-card-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+/* ---------- Image de post : cadre, zoom au survol, bouton agrandir ---------- */
+.post-image-frame {
+  position: relative;
+  margin-top: 12px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+.post-image-frame .post-image {
+  margin-top: 0;
+  transition: transform 0.35s ease;
+}
+.post-image-frame:hover .post-image {
+  transform: scale(1.035);
+}
+.post-image-expand-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 0;
+  background: rgba(15, 23, 42, 0.55);
+  color: white;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+.post-image-frame:hover .post-image-expand-btn,
+.post-image-expand-btn:focus-visible {
+  opacity: 1;
+}
+.post-image-expand-btn:hover {
+  background: rgba(15, 23, 42, 0.75);
+}
+
+/* ---------- Commentaires : apparition douce d'un nouveau fil ---------- */
+.comment-thread-enter {
+  animation: comment-thread-in 0.22s ease;
+}
+@keyframes comment-thread-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---------- Édition de post : pied avec compteur ---------- */
+.edit-post-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ---------- État vide : bouton d'action optionnel ---------- */
+.empty-state-action {
+  margin-top: 4px;
+}
+
+/* Responsive : image et menu restent confortables sur mobile */
+@media (max-width: 720px) {
+  .post-image-expand-btn {
+    opacity: 1;
+  }
+}
+
+/* ==========================================================
+   PROFILE CARD — refonte "premium" (Sidebar gauche uniquement)
+   ----------------------------------------------------------
+   Périmètre strict : ce bloc ne cible QUE .profile-card et ses
+   enfants directs. Aucune autre carte (.challenge-card, .panel,
+   .post-card, .panic-card, .composer, .hero-card, .story-card)
+   ni le composant Avatar (partagé) n'est modifié.
+   Fonctionne en thème clair ET sombre via les variables.
+   ========================================================== */
+
+/* La carte : fond plus lumineux + très léger dégradé bleu → violet
+   HealSpace, fine bordure teintée et halo lumineux discret. On la
+   distingue immédiatement comme étant le profil de l'utilisateur. */
+.profile-card {
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  gap: 14px;
+  background:
+    linear-gradient(135deg,
+      rgba(37, 99, 235, 0.13),
+      rgba(124, 58, 237, 0.13)),
+    var(--card-elevated);
+  border: 1px solid rgba(124, 58, 237, 0.22);
+  box-shadow:
+    0 18px 50px rgba(15, 23, 42, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),
+    0 8px 30px rgba(124, 58, 237, 0.10);
+  transition:
+    box-shadow 0.18s ease,
+    transform 0.18s ease,
+    border-color 0.18s ease;
+}
+
+/* Halo lumineux très discret, posé en haut à droite et clippé par la
+   carte (overflow: hidden). Purement décoratif, ne capte pas la souris. */
+.profile-card::before {
+  content: "";
+  position: absolute;
+  top: -45%;
+  right: -18%;
+  width: 170px;
+  height: 170px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.22), transparent 70%);
+  pointer-events: none;
+  opacity: 0.85;
+  transition: opacity 0.18s ease;
+}
+
+/* Hover : la carte s'illumine légèrement. Discret, jamais flashy. */
+.profile-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(124, 58, 237, 0.30);
+  box-shadow:
+    0 22px 60px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    0 10px 36px rgba(124, 58, 237, 0.18);
+}
+.profile-card:hover::before {
+  opacity: 1;
+}
+
+/* Conteneur de l'avatar : sert d'ancre au point de présence, sans
+   toucher au composant Avatar partagé. */
+.profile-avatar-wrap {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+/* Avatar (uniquement dans la profile-card) : ombre douce + anneau subtil.
+   Le léger dégradé bleu → violet existe déjà sur .avatar, on le conserve. */
+.profile-card .avatar.large {
+  width: 52px;
+  height: 52px;
+  box-shadow:
+    0 6px 16px rgba(37, 99, 235, 0.30),
+    0 0 0 3px var(--card-elevated),
+    0 0 0 4px rgba(124, 58, 237, 0.35);
+  transition: transform 0.18s ease;
+}
+.profile-card:hover .avatar.large {
+  transform: scale(1.04);
+}
+
+/* Petit indicateur de présence (en ligne). */
+.profile-avatar-wrap::after {
+  content: "";
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--success);
+  border: 2.5px solid var(--card-elevated);
+  box-shadow: 0 0 8px rgba(22, 163, 74, 0.55);
+}
+
+/* Espacements : nom et statut respirent davantage. */
+.profile-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* Nom : légèrement plus grand et au poids plus marqué. */
+.profile-card .profile-card__name {
+  display: block;
+  margin-bottom: 0;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+/* Statut : badge élégant, arrondi, fond discret, texte lisible,
+   avec sa petite pastille verte. */
+.profile-card .profile-card__status {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--success);
+  background: rgba(22, 163, 74, 0.12);
+  border: 1px solid rgba(22, 163, 74, 0.22);
+}
+.profile-card .profile-card__status::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+}
+
+/* Respect des préférences de mouvement réduit. */
+@media (prefers-reduced-motion: reduce) {
+  .profile-card,
+  .profile-card::before,
+  .profile-card .avatar.large {
+    transition: none;
+  }
+  .profile-card:hover {
+    transform: none;
+  }
+  .profile-card:hover .avatar.large {
+    transform: none;
+  }
+}
+
+/* ==========================================================
+   PROFILE HEADER (page Profil) — refonte propre
+   ----------------------------------------------------------
+   Corrige la mise en page cassée (nom/statut qui remontaient
+   dans la couverture, éléments serrés) et harmonise le statut
+   avec le badge de la sidebar. Ce bloc surcharge volontairement
+   les anciennes règles .profile-header-* dispersées plus haut
+   (source order). Ne cible que le ProfileHeader.
+   ========================================================== */
+.profile-header-card {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  padding: 0 0 24px;
+  margin-bottom: 16px;
+  border-radius: 28px;
+  background: var(--card-elevated);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+/* Couverture dégradée, sans le décalage négatif d'origine. */
+.profile-cover {
+  height: 132px;
+  margin: 0;
+  background:
+    radial-gradient(circle at 18% 25%, rgba(255, 255, 255, 0.20), transparent 46%),
+    linear-gradient(120deg, var(--primary), var(--purple));
+}
+
+/* Corps en colonne : tout descend SOUS la couverture, plus rien
+   ne remonte dans le dégradé. */
+.profile-header-body {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0 28px 4px;
+}
+
+/* Seul l'avatar chevauche la couverture, via un anneau clair. */
+.profile-avatar-ring {
+  width: -moz-fit-content;
+  width: fit-content;
+  margin-top: -48px;
+  padding: 5px;
+  border-radius: 50%;
+  background: var(--card-elevated);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
+}
+.profile-header-body .avatar.large {
+  width: 92px;
+  height: 92px;
+  font-size: 30px;
+  border: 0;
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.18);
+}
+
+/* Nom + statut, bien aérés, sous l'avatar. */
+.profile-identity {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+  margin-top: 14px;
+}
+.profile-header-card h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+/* Statut en badge élégant (cohérent avec la sidebar). Spécificité
+   relevée pour battre la règle générique .profile-header-card span. */
+.profile-header-card .profile-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--success);
+  background: rgba(22, 163, 74, 0.12);
+  border: 1px solid rgba(22, 163, 74, 0.22);
+}
+.profile-header-card .profile-status-badge::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+}
+
+/* Bio aérée. */
+.profile-bio {
+  margin: 14px 0 0;
+  max-width: 560px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Badges de progression : un peu plus d'air au-dessus. */
+.profile-badges {
+  margin-top: 18px;
+}
+
+/* Bouton « Modifier le profil » : en haut à droite de la zone blanche. */
+.profile-edit-btn {
+  position: absolute;
+  top: 150px;
+  right: 28px;
+  margin: 0;
+}
+
+/* Mobile : couverture plus courte, avatar plus petit, bouton en pleine
+   largeur sous le contenu (surcharge les anciennes règles responsive). */
+@media (max-width: 720px) {
+  .profile-cover {
+    height: 104px;
+  }
+  .profile-header-body {
+    padding: 0 18px 4px;
+  }
+  .profile-avatar-ring {
+    margin-top: -42px;
+  }
+  .profile-header-body .avatar.large {
+    width: 78px;
+    height: 78px;
+    font-size: 26px;
+  }
+  .profile-header-card h2 {
+    font-size: 21px;
+  }
+  .profile-edit-btn {
+    position: static;
+    top: auto;
+    right: auto;
+    width: 100%;
+    margin-top: 18px;
+    justify-content: center;
+  }
+}
