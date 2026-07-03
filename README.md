@@ -1,40 +1,68 @@
-# HealSpace — Startup V1 (refactor architecture)
+# HealSpace 🌱
 
-Projet React/Vite, directement exécutable.
+HealSpace est une plateforme sociale dédiée au soutien émotionnel, à la reconstruction personnelle et au bien-être mental.
+
+L’objectif n’est pas de créer un simple réseau social, mais un espace bienveillant où les utilisateurs peuvent partager ce qu’ils ressentent, recevoir du soutien, suivre leur progression et rejoindre des communautés adaptées à leur situation.
+
+## Vision
+
+Créer un espace numérique où chaque personne peut respirer, s’exprimer et avancer sans jugement.
+
+## Phrase boussole
+
+> Chaque fonctionnalité doit améliorer le bien-être de l’utilisateur, jamais son niveau de stress.
+
+## Objectifs du produit
+
+- Permettre aux utilisateurs de partager leurs émotions.
+- Créer une communauté bienveillante.
+- Aider à la reconstruction personnelle.
+- Proposer un journal émotionnel.
+- Créer des groupes de soutien ciblés.
+- Intégrer progressivement une IA d’accompagnement responsable.
+- Préparer une future version mobile.
+
+## Fonctionnalités actuelles
+
+- Interface React/Vite
+- Navigation complète
+- Feed social
+- Publications
+- Commentaires
+- Soutiens
+- Groupes
+- Profil utilisateur
+- Journal émotionnel
+- Notifications
+- Paramètres
+- Mode clair / sombre
+- Responsive desktop et mobile
+- Stockage local temporaire via LocalStorage
+
+## Stack actuelle
+
+### Frontend
+
+- React
+- Vite
+- React Router
+- Context API
+- CSS personnalisé
+- LocalStorage
+
+### Backend prévu
+
+- Node.js
+- Express
+- PostgreSQL
+- Prisma
+- JWT
+- bcrypt
+- Zod
+- Socket.io
 
 ## Installation
 
 ```bash
 npm install
 npm run dev
-```
-
-## Architecture
-
-```text
-src/
-├── components/
-│   ├── common/    Avatar, Button, Modal, EmptyState, PageHeader, ProtectedRoute
-│   ├── feed/      Feed, Composer, PostCard, PostList, StoriesRow, PublishModal
-│   ├── groups/    GroupCard, GroupList
-│   ├── layout/    Topbar, LeftSidebar, RightSidebar, MobileNav
-│   ├── messages/  ConversationList, ConversationItem, ChatWindow
-│   ├── profile/   ProfileHeader, ProfileStats
-│   └── ui/        réservé aux futurs composants atomiques (design system)
-├── contexts/      AuthContext, ThemeContext, PostsContext, UIContext
-├── hooks/         useAuth, useTheme, usePosts, useUI, useDisclosure
-├── layouts/       AppLayout (Topbar + sidebars + MobileNav + <Outlet/>)
-├── pages/         une page = une route (Accueil, Groupes, Messages, Journal,
-│                  Ressources, Urgence, Profil, Notifications, Paramètres, Login)
-├── services/      api.js, authService.js, postsService.js (prêts pour le backend)
-├── utils/         constants.js, formatters.js
-├── data/          mockData.js (sera remplacé par de vraies requêtes API)
-└── styles/        global.css (mode clair + mode sombre préparé)
-```
-
-## Prochaines étapes (backend)
-
-- Node.js + Express : exposer les routes consommées par `services/*.js`
-- Prisma + PostgreSQL : modèles User, Post, Group, Message, JournalEntry
-- Socket.io : remplacer l'état local de `MessagesPage` par du temps réel
-- JWT : remplacer `authService` mock par une vraie authentification

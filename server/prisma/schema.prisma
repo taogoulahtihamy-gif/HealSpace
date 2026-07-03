@@ -1,0 +1,247 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//////////////////////////////////////////////////////
+// ENUMS
+//////////////////////////////////////////////////////
+
+enum UserRole {
+  USER
+  MODERATOR
+  PSYCHOLOGIST
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+enum Visibility {
+  PUBLIC
+  FRIENDS
+  PRIVATE
+}
+
+enum MoodType {
+  HAPPY
+  CALM
+  STRESSED
+  SAD
+  ANXIOUS
+  ANGRY
+  MOTIVATED
+  EXHAUSTED
+}
+
+enum PostVisibility {
+  PUBLIC
+  GROUP
+  PRIVATE
+}
+
+enum PostStatus {
+  PUBLISHED
+  DRAFT
+  ARCHIVED
+  DELETED
+}
+
+enum PostIntention {
+  BE_LISTENED
+  RECEIVE_ADVICE
+  FIND_SIMILAR_PEOPLE
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  AUDIO
+  FILE
+}
+
+enum ReactionType {
+  LIKE
+  LOVE
+  HUG
+  SUPPORT
+  THANKS
+  INSIGHTFUL
+}
+
+//////////////////////////////////////////////////////
+// USER
+//////////////////////////////////////////////////////
+
+model User {
+  id            String      @id @default(cuid())
+
+  firstName     String
+  lastName      String
+  username      String      @unique
+  email         String      @unique
+  phone         String?
+  password      String
+
+  avatar        String?
+  coverPhoto    String?
+  bio           String?
+  birthDate     DateTime?
+  gender        Gender?
+  country       String?
+  city          String?
+  language      String      @default("fr")
+  timezone      String?
+  role          UserRole    @default(USER)
+  status        UserStatus  @default(ACTIVE)
+  visibility    Visibility  @default(PUBLIC)
+  currentMood   MoodType?
+
+  isVerified    Boolean     @default(false)
+  emailVerified Boolean     @default(false)
+  phoneVerified Boolean     @default(false)
+  isPrivate     Boolean     @default(false)
+  allowAI       Boolean     @default(true)
+  lastLogin     DateTime?
+
+  posts         Post[]
+  comments      Comment[]
+  reactions     Reaction[]
+  media         Media[]
+
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  refreshTokens RefreshToken[]
+}
+
+
+//////////////////////////////////////////////////////
+// RefreshToken
+//////////////////////////////////////////////////////
+
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+
+
+//////////////////////////////////////////////////////
+// REQUETE
+//////////////////////////////////////////////////////
+
+model Post {
+  id            String         @id @default(cuid())
+
+  authorId      String
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  content       String
+  mood          MoodType?
+  intention     PostIntention?
+  visibility    PostVisibility @default(PUBLIC)
+  status        PostStatus     @default(PUBLISHED)
+  isAnonymous   Boolean        @default(false)
+
+  comments      Comment[]
+  reactions     Reaction[]
+  media         Media[]
+
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@index([visibility])
+  @@index([status])
+}
+
+
+model Comment {
+  id            String     @id @default(cuid())
+
+  postId        String
+  post          Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  authorId      String
+  author        User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  parentId      String?
+  parent        Comment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       Comment[]  @relation("CommentReplies")
+
+  content       String
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  deletedAt     DateTime?
+
+  @@index([postId])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+model Reaction {
+  id            String       @id @default(cuid())
+
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  postId        String
+  post          Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  type          ReactionType @default(SUPPORT)
+
+  createdAt     DateTime     @default(now())
+
+  @@unique([userId, postId])
+  @@index([postId])
+  @@index([userId])
+}
+
+model Media {
+  id            String     @id @default(cuid())
+
+  ownerId       String
+  owner         User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  postId        String?
+  post          Post?      @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  url           String
+  publicId      String?
+  type          MediaType   @default(IMAGE)
+  mimeType      String?
+  size          Int?
+
+  createdAt     DateTime   @default(now())
+
+  @@index([ownerId])
+  @@index([postId])
+}
