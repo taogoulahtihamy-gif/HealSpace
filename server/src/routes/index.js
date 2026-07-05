@@ -5,6 +5,9 @@ import postRoutes from "../modules/posts/post.routes.js";
 import commentRoutes from "../modules/comments/comment.routes.js";
 import aiRoutes from "../modules/ai/ai.routes.js";
 import reactionRoutes from "../modules/reactions/reaction.routes.js";
+import conversationRoutes from "../modules/conversations/conversation.routes.js";
+import messageRoutes from "../modules/messages/message.routes.js";
+
 const router = Router();
 
 router.get("/health", (req, res) => {
@@ -19,4 +22,7 @@ router.use("/posts", postRoutes);
 router.use("/", commentRoutes);
 router.use("/ai", aiRoutes);
 router.use("/", reactionRoutes);
+router.use("/conversations", conversationRoutes);
+router.use("/messages", messageRoutes);
+
 export default router;

@@ -8,10 +8,20 @@ const testUser = {
   password: "password123",
 };
 
+const secondUser = {
+  firstName: "Ami",
+  lastName: "Test",
+  username: "healspace_friend_auto_test",
+  email: "healspace_friend_auto_test@test.com",
+  password: "password123",
+};
+
 let accessToken = null;
-let refreshToken = null;
+let secondUserId = null;
 let postId = null;
 let commentId = null;
+let conversationId = null;
+let messageId = null;
 
 function logSuccess(message) {
   console.log(`✅ ${message}`);
@@ -52,17 +62,14 @@ async function request(path, options = {}) {
   return body;
 }
 
-async function registerOrLogin() {
+async function registerOrLoginUser(user) {
   try {
     const result = await request("/auth/register", {
       method: "POST",
-      body: JSON.stringify(testUser),
+      body: JSON.stringify(user),
     });
 
-    accessToken = result.data.accessToken;
-    refreshToken = result.data.refreshToken;
-
-    logSuccess("Register");
+    return result.data;
   } catch (error) {
     if (error.status !== 409) {
       throw error;
@@ -71,16 +78,23 @@ async function registerOrLogin() {
     const result = await request("/auth/login", {
       method: "POST",
       body: JSON.stringify({
-        email: testUser.email,
-        password: testUser.password,
+        email: user.email,
+        password: user.password,
       }),
     });
 
-    accessToken = result.data.accessToken;
-    refreshToken = result.data.refreshToken;
-
-    logSuccess("Login existing user");
+    return result.data;
   }
+}
+
+async function registerOrLogin() {
+  const result = await registerOrLoginUser(testUser);
+  accessToken = result.accessToken;
+  logSuccess("Login existing user");
+
+  const secondResult = await registerOrLoginUser(secondUser);
+  secondUserId = secondResult.user.id;
+  logSuccess("Prepare second user");
 }
 
 async function testCreatePost() {
@@ -96,7 +110,6 @@ async function testCreatePost() {
   });
 
   postId = result.data.id;
-
   logSuccess("Create Post");
 }
 
@@ -129,7 +142,7 @@ async function testAiAnalyzeMood() {
   await request("/ai/analyze-mood", {
     method: "POST",
     body: JSON.stringify({
-      text: "Je suis fatigué mais je veux continuer à avancer.",
+      content: "Je suis fatigué mais je veux continuer à avancer.",
     }),
   });
 
@@ -140,8 +153,8 @@ async function testAiSupportMessage() {
   await request("/ai/support-message", {
     method: "POST",
     body: JSON.stringify({
+      content: "Je travaille sur mon projet et je suis fatigué.",
       mood: "EXHAUSTED",
-      context: "Je travaille sur mon projet et je suis fatigué.",
     }),
   });
 
@@ -185,6 +198,83 @@ async function testDeleteReaction() {
   logSuccess("Delete Reaction");
 }
 
+async function testCreateDirectConversation() {
+  const result = await request("/conversations/direct", {
+    method: "POST",
+    body: JSON.stringify({
+      participantId: secondUserId,
+    }),
+  });
+
+  conversationId = result.data.id;
+  logSuccess("Create Direct Conversation");
+}
+
+async function testGetConversations() {
+  await request("/conversations", { method: "GET" });
+  logSuccess("Get Conversations");
+}
+
+async function testGetConversationById() {
+  await request(`/conversations/${conversationId}`, { method: "GET" });
+  logSuccess("Get Conversation By Id");
+}
+
+async function testCreateMessage() {
+  const result = await request(`/conversations/${conversationId}/messages`, {
+    method: "POST",
+    body: JSON.stringify({
+      content: "Message automatique dans une conversation.",
+    }),
+  });
+
+  messageId = result.data.id;
+  logSuccess("Create Message");
+}
+
+async function testGetMessages() {
+  await request(`/conversations/${conversationId}/messages`, {
+    method: "GET",
+  });
+
+  logSuccess("Get Messages");
+}
+
+async function testUpdateMessage() {
+  await request(`/messages/${messageId}`, {
+    method: "PATCH",
+    body: JSON.stringify({
+      content: "Message automatique mis à jour.",
+    }),
+  });
+
+  logSuccess("Update Message");
+}
+
+async function testMarkMessageAsRead() {
+  await request(`/messages/${messageId}/read`, {
+    method: "PATCH",
+  });
+
+  logSuccess("Mark Message As Read");
+}
+
+async function testDeleteMessage() {
+  await request(`/messages/${messageId}`, {
+    method: "DELETE",
+  });
+
+  logSuccess("Delete Message");
+}
+
+async function testLeaveConversation() {
+  await request(`/conversations/${conversationId}`, {
+    method: "DELETE",
+  });
+
+  logSuccess("Leave Conversation");
+}
+
 async function testCreateComment() {
   const result = await request(`/posts/${postId}/comments`, {
     method: "POST",
@@ -194,7 +284,6 @@ async function testCreateComment() {
   });
 
   commentId = result.data.id;
-
   logSuccess("Create Comment");
 }
 
@@ -245,6 +334,18 @@ async function runTests() {
     await testGetReactions();
     await testGetReactionSummary();
     await testDeleteReaction();
+
+    await testCreateDirectConversation();
+    await testGetConversations();
+    await testGetConversationById();
+
+    await testCreateMessage();
+    await testGetMessages();
+    await testUpdateMessage();
+    await testMarkMessageAsRead();
+    await testDeleteMessage();
+
+    await testLeaveConversation();
 
     await testCreateComment();
     await testGetComments();

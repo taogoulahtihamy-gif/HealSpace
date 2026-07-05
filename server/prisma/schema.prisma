@@ -84,6 +84,12 @@ enum ReactionType {
   INSIGHTFUL
 }
 
+enum ConversationType {
+  DIRECT
+  GROUP
+}
+
+
 //////////////////////////////////////////////////////
 // USER
 //////////////////////////////////////////////////////
@@ -128,6 +134,10 @@ model User {
   updatedAt     DateTime    @updatedAt
 
   refreshTokens RefreshToken[]
+  
+  conversationParticipants ConversationParticipant[]
+  sentMessages Message[]
+
 }
 
 
@@ -244,4 +254,68 @@ model Media {
 
   @@index([ownerId])
   @@index([postId])
+}
+
+
+/////////////////////////////////////////////////////
+// CONVERSATION
+//////////////////////////////////////////////////////
+
+model Conversation {
+  id           String                    @id @default(cuid())
+  type         ConversationType          @default(DIRECT)
+  title        String?
+  participants ConversationParticipant[]
+  createdAt    DateTime                  @default(now())
+  updatedAt    DateTime                  @updatedAt
+  deletedAt    DateTime?
+
+  messages Message[]
+
+  @@index([type])
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime     @default(now())
+  leftAt         DateTime?
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([conversationId])
+  @@index([userId])
+  @@map("conversation_participants")
+}
+
+////////////////////////////////////////////////////
+// MESSAGE
+//////////////////////////////////////////////////////
+
+
+model Message {
+  id             String       @id @default(cuid())
+
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  senderId       String
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  content        String
+  isRead         Boolean      @default(false)
+  readAt         DateTime?
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("messages")
 }
