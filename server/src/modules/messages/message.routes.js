@@ -15,34 +15,39 @@ import {
 
 const router = Router();
 
+// POST /api/messages/conversations/:conversationId
 router.post(
-  "/conversations/:conversationId/messages",
+  "/conversations/:conversationId",
   authMiddleware,
   validate(createMessageSchema),
   createMessage
 );
 
+// GET /api/messages/conversations/:conversationId
 router.get(
-  "/conversations/:conversationId/messages",
+  "/conversations/:conversationId",
   authMiddleware,
   getConversationMessages
 );
 
+// PATCH /api/messages/:id
 router.patch(
-  "/messages/:id",
+  "/:id",
   authMiddleware,
   validate(updateMessageSchema),
   updateMessage
 );
 
+// PATCH /api/messages/:id/read
 router.patch(
-  "/messages/:id/read",
+  "/:id/read",
   authMiddleware,
   markMessageAsRead
 );
 
+// DELETE /api/messages/:id
 router.delete(
-  "/messages/:id",
+  "/:id",
   authMiddleware,
   deleteMessage
 );

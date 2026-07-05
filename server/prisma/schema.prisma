@@ -89,102 +89,151 @@ enum ConversationType {
   GROUP
 }
 
+enum GroupVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum GroupMemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
 
 //////////////////////////////////////////////////////
 // USER
 //////////////////////////////////////////////////////
 
 model User {
-  id            String      @id @default(cuid())
+  id String @id @default(cuid())
 
-  firstName     String
-  lastName      String
-  username      String      @unique
-  email         String      @unique
-  phone         String?
-  password      String
+  firstName String
+  lastName  String
+  username  String  @unique
+  email     String  @unique
+  phone     String?
+  password  String
 
-  avatar        String?
-  coverPhoto    String?
-  bio           String?
-  birthDate     DateTime?
-  gender        Gender?
-  country       String?
-  city          String?
-  language      String      @default("fr")
-  timezone      String?
-  role          UserRole    @default(USER)
-  status        UserStatus  @default(ACTIVE)
-  visibility    Visibility  @default(PUBLIC)
-  currentMood   MoodType?
+  avatar      String?
+  coverPhoto  String?
+  bio         String?
+  birthDate   DateTime?
+  gender      Gender?
+  country     String?
+  city        String?
+  language    String     @default("fr")
+  timezone    String?
+  role        UserRole   @default(USER)
+  status      UserStatus @default(ACTIVE)
+  visibility  Visibility @default(PUBLIC)
+  currentMood MoodType?
 
-  isVerified    Boolean     @default(false)
-  emailVerified Boolean     @default(false)
-  phoneVerified Boolean     @default(false)
-  isPrivate     Boolean     @default(false)
-  allowAI       Boolean     @default(true)
+  isVerified    Boolean   @default(false)
+  emailVerified Boolean   @default(false)
+  phoneVerified Boolean   @default(false)
+  isPrivate     Boolean   @default(false)
+  allowAI       Boolean   @default(true)
   lastLogin     DateTime?
 
-  posts         Post[]
-  comments      Comment[]
-  reactions     Reaction[]
-  media         Media[]
+  posts     Post[]
+  comments  Comment[]
+  reactions Reaction[]
+  media     Media[]
 
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  groups       Group[]       @relation("GroupOwner")
+  groupMembers GroupMember[] @relation("GroupMemberUser")
 
   refreshTokens RefreshToken[]
-  
-  conversationParticipants ConversationParticipant[]
-  sentMessages Message[]
 
+  conversationParticipants ConversationParticipant[]
+  sentMessages             Message[]
+
+  journalEntries JournalEntry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
+//////////////////////////////////////////////////////
+// GROUP
+//////////////////////////////////////////////////////
+
+model Group {
+  id          String          @id @default(cuid())
+  name        String
+  slug        String          @unique
+  description String?
+  coverUrl    String?
+  visibility  GroupVisibility @default(PUBLIC)
+  ownerId     String
+
+  owner   User          @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members GroupMember[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([visibility, createdAt])
+}
+
+model GroupMember {
+  id      String          @id @default(cuid())
+  groupId String
+  userId  String
+  role    GroupMemberRole @default(MEMBER)
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation("GroupMemberUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@index([groupId, role])
+}
 
 //////////////////////////////////////////////////////
-// RefreshToken
+// REFRESH TOKEN
 //////////////////////////////////////////////////////
-
 
 model RefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique
+  id        String    @id @default(cuid())
+  token     String    @unique
   userId    String
   expiresAt DateTime
   revokedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("refresh_tokens")
 }
 
-
-
 //////////////////////////////////////////////////////
-// REQUETE
+// POST
 //////////////////////////////////////////////////////
 
 model Post {
-  id            String         @id @default(cuid())
+  id String @id @default(cuid())
 
-  authorId      String
-  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  content       String
-  mood          MoodType?
-  intention     PostIntention?
-  visibility    PostVisibility @default(PUBLIC)
-  status        PostStatus     @default(PUBLISHED)
-  isAnonymous   Boolean        @default(false)
+  content     String
+  mood        MoodType?
+  intention   PostIntention?
+  visibility  PostVisibility @default(PUBLIC)
+  status      PostStatus     @default(PUBLISHED)
+  isAnonymous Boolean        @default(false)
 
-  comments      Comment[]
-  reactions     Reaction[]
-  media         Media[]
+  comments  Comment[]
+  reactions Reaction[]
+  media     Media[]
 
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([authorId])
   @@index([createdAt])
@@ -192,99 +241,111 @@ model Post {
   @@index([status])
 }
 
+//////////////////////////////////////////////////////
+// COMMENT
+//////////////////////////////////////////////////////
 
 model Comment {
-  id            String     @id @default(cuid())
+  id String @id @default(cuid())
 
-  postId        String
-  post          Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  authorId      String
-  author        User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  parentId      String?
-  parent        Comment?   @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies       Comment[]  @relation("CommentReplies")
+  parentId String?
+  parent   Comment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentReplies")
 
-  content       String
+  content String
 
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  deletedAt     DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([postId])
   @@index([authorId])
   @@index([parentId])
 }
 
+//////////////////////////////////////////////////////
+// REACTION
+//////////////////////////////////////////////////////
+
 model Reaction {
-  id            String       @id @default(cuid())
+  id String @id @default(cuid())
 
-  userId        String
-  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  postId        String
-  post          Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  type          ReactionType @default(SUPPORT)
+  type ReactionType @default(SUPPORT)
 
-  createdAt     DateTime     @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([userId, postId])
   @@index([postId])
   @@index([userId])
 }
 
+//////////////////////////////////////////////////////
+// MEDIA
+//////////////////////////////////////////////////////
+
 model Media {
-  id            String     @id @default(cuid())
+  id String @id @default(cuid())
 
-  ownerId       String
-  owner         User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  postId        String?
-  post          Post?      @relation(fields: [postId], references: [id], onDelete: SetNull)
+  postId String?
+  post   Post?   @relation(fields: [postId], references: [id], onDelete: SetNull)
 
-  url           String
-  publicId      String?
-  type          MediaType   @default(IMAGE)
-  mimeType      String?
-  size          Int?
+  url      String
+  publicId String?
+  type     MediaType @default(IMAGE)
+  mimeType String?
+  size     Int?
 
-  createdAt     DateTime   @default(now())
+  createdAt DateTime @default(now())
 
   @@index([ownerId])
   @@index([postId])
 }
 
-
-/////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
 // CONVERSATION
 //////////////////////////////////////////////////////
 
 model Conversation {
-  id           String                    @id @default(cuid())
+  id String @id @default(cuid())
+
   type         ConversationType          @default(DIRECT)
   title        String?
   participants ConversationParticipant[]
-  createdAt    DateTime                  @default(now())
-  updatedAt    DateTime                  @updatedAt
-  deletedAt    DateTime?
+  messages     Message[]
 
-  messages Message[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([type])
   @@map("conversations")
 }
 
 model ConversationParticipant {
-  id             String       @id @default(cuid())
+  id             String @id @default(cuid())
   conversationId String
   userId         String
-  joinedAt       DateTime     @default(now())
-  leftAt         DateTime?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
 
   @@unique([conversationId, userId])
   @@index([conversationId])
@@ -292,30 +353,55 @@ model ConversationParticipant {
   @@map("conversation_participants")
 }
 
-////////////////////////////////////////////////////
+//////////////////////////////////////////////////////
 // MESSAGE
 //////////////////////////////////////////////////////
 
-
 model Message {
-  id             String       @id @default(cuid())
+  id String @id @default(cuid())
 
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
-  senderId       String
-  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  senderId String
+  sender   User   @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
-  content        String
-  isRead         Boolean      @default(false)
-  readAt         DateTime?
+  content String
+  isRead  Boolean   @default(false)
+  readAt  DateTime?
 
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-  deletedAt      DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
   @@index([conversationId])
   @@index([senderId])
   @@index([createdAt])
   @@map("messages")
+}
+
+/////////////////////////////////////////////////////
+// MESSAGE
+//////////////////////////////////////////////////////
+model JournalEntry {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title     String?
+  content   String
+  mood      MoodType
+  intensity Int?
+
+  occurredAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  @@index([userId])
+  @@index([userId, mood])
+  @@index([userId, occurredAt])
+  @@index([userId, deletedAt])
+  @@map("journal_entries")
 }
