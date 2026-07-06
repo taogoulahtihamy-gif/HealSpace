@@ -10,6 +10,9 @@ import messageRoutes from "../modules/messages/message.routes.js";
 import mediaRoutes from "../modules/media/media.routes.js";
 import groupRoutes from "../modules/groups/group.routes.js";
 import journalRoutes from "../modules/journal/journal.routes.js";
+import notificationRoutes from "../modules/notifications/notification.routes.js";
+import userRoutes from "../modules/users/user.routes.js";
+import supportRoutes from "../modules/supports/support.routes.js";
 
 const router = Router();
 
@@ -19,7 +22,6 @@ router.get("/health", (req, res) => {
     message: "HealSpace API is running",
   });
 });
-
 router.use("/auth", authRoutes);
 router.use("/posts", postRoutes);
 router.use("/", commentRoutes);
@@ -30,5 +32,8 @@ router.use("/messages", messageRoutes);
 router.use("/media", mediaRoutes);
 router.use("/groups", groupRoutes);
 router.use("/journal", journalRoutes);
+router.use("/notifications", notificationRoutes);
+router.use("/users", userRoutes);
+router.use("/supports", supportRoutes);
 
 export default router;

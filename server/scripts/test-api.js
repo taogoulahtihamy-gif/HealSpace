@@ -1,3 +1,6 @@
+import { prisma } from "../src/config/prisma.js";
+import { createNotification } from "../src/modules/notifications/notification.service.js";
+
 const API_URL = "http://localhost:5000/api";
 
 const testUser = {
@@ -16,9 +19,24 @@ const secondUser = {
   password: "password123",
 };
 
+let disposableUserToken = null;
+let disposableUserId = null;
+let disposableUserPassword = "password123";
+
+const disposableUserSeed = Date.now();
+
+const disposableUser = {
+  firstName: "Temporary",
+  lastName: "User",
+  username: `healspace_temp_${disposableUserSeed}`,
+  email: `healspace_temp_${disposableUserSeed}@test.com`,
+  password: disposableUserPassword,
+};
+
 let accessToken = null;
 let secondAccessToken = null;
 
+let primaryUserId = null;
 let secondUserId = null;
 let postId = null;
 let commentId = null;
@@ -29,6 +47,9 @@ let mediaId = null;
 let groupId = null;
 let groupMemberId = null;
 let journalEntryId = null;
+let notificationId = null;
+let supportRequestId = null;
+let cancellableSupportRequestId = null;
 
 function logSuccess(message) {
   console.log(`✅ ${message}`);
@@ -108,6 +129,7 @@ async function registerOrLogin() {
   const result = await registerOrLoginUser(testUser);
 
   accessToken = result.accessToken;
+  primaryUserId = result.user.id;
 
   logSuccess("Login existing user");
 
@@ -211,6 +233,7 @@ async function testAiSupportMessage() {
 async function testCreateReaction() {
   await request(`/posts/${postId}/reactions`, {
     method: "POST",
+    token: secondAccessToken,
     body: JSON.stringify({
       type: "SUPPORT",
     }),
@@ -219,9 +242,38 @@ async function testCreateReaction() {
   logSuccess("Create Reaction");
 }
 
+
+async function testGetReactionNotification() {
+  const result = await request(
+    "/notifications?type=REACTION&page=1&limit=20",
+    {
+      method: "GET",
+    },
+  );
+
+  const notifications = result.data?.items || [];
+
+  const notification = notifications.find(
+    (item) =>
+      item.type === "REACTION" &&
+      item.data?.postId === postId &&
+      item.actor?.id === secondUserId,
+  );
+
+  if (!notification) {
+    throw new Error(
+      "La notification de réaction n'a pas été créée.",
+    );
+  }
+
+  logSuccess("Get Reaction Notification");
+}
+
+
 async function testUpdateReaction() {
   await request(`/posts/${postId}/reactions`, {
     method: "POST",
+    token: secondAccessToken,
     body: JSON.stringify({
       type: "LOVE",
     }),
@@ -249,11 +301,11 @@ async function testGetReactionSummary() {
 async function testDeleteReaction() {
   await request(`/posts/${postId}/reactions`, {
     method: "DELETE",
+    token: secondAccessToken,
   });
 
   logSuccess("Delete Reaction");
 }
-
 /*
 |--------------------------------------------------------------------------
 | Conversations
@@ -309,6 +361,36 @@ async function testCreateMessage() {
   messageId = result.data.id;
 
   logSuccess("Create Message");
+}
+
+async function testGetMessageNotification() {
+  const result = await request(
+    "/notifications?type=MESSAGE&page=1&limit=20",
+    {
+      method: "GET",
+      token: secondAccessToken,
+    },
+  );
+
+  const notifications =
+    result.data?.items || [];
+
+  const notification = notifications.find(
+    (item) =>
+      item.type === "MESSAGE" &&
+      item.data?.conversationId ===
+        conversationId &&
+      item.data?.messageId === messageId &&
+      item.actor?.id === primaryUserId,
+  );
+
+  if (!notification) {
+    throw new Error(
+      "La notification de message n'a pas été créée.",
+    );
+  }
+
+  logSuccess("Get Message Notification");
 }
 
 async function testGetMessages() {
@@ -506,6 +588,35 @@ async function testSecondUserGetMyGroups() {
   logSuccess("Second User Get My Groups");
 }
 
+async function testGetGroupJoinNotification() {
+  const result = await request(
+    "/notifications?type=GROUP_JOIN&page=1&limit=20",
+    {
+      method: "GET",
+    },
+  );
+
+  const notifications =
+    result.data?.items || [];
+
+  const notification = notifications.find(
+    (item) =>
+      item.type === "GROUP_JOIN" &&
+      item.data?.groupId === groupId &&
+      item.data?.memberId === groupMemberId &&
+      item.actor?.id === secondUserId,
+  );
+
+  if (!notification) {
+    throw new Error(
+      "La notification d'adhésion au groupe n'a pas été créée.",
+    );
+  }
+
+  logSuccess("Get Group Join Notification");
+}
+
+
 async function testUpdateGroupMemberRole() {
   await request(
     `/groups/${groupId}/members/${groupMemberId}/role`,
@@ -691,6 +802,142 @@ async function testDeleteJournalEntry() {
   logSuccess("Delete Journal Entry");
 }
 
+
+/*
+|--------------------------------------------------------------------------
+| Notifications
+|--------------------------------------------------------------------------
+*/
+
+async function testCreateNotificationFixture() {
+  const notification = await createNotification({
+    userId: primaryUserId,
+    actorId: secondUserId,
+    type: "MESSAGE",
+    title: "Nouvelle notification de test",
+    message:
+      "Une notification a été créée automatiquement pour les tests HealSpace.",
+    data: {
+      source: "test-api",
+      conversationId,
+    },
+  });
+
+  notificationId = notification?.id;
+
+  if (!notificationId) {
+    throw new Error(
+      "La création interne de la notification n'a retourné aucun identifiant.",
+    );
+  }
+
+  logSuccess("Create Notification Fixture");
+}
+
+async function testGetNotifications() {
+  await request("/notifications?page=1&limit=10", {
+    method: "GET",
+  });
+
+  logSuccess("Get Notifications");
+}
+
+async function testFilterUnreadNotifications() {
+  await request(
+    "/notifications?isRead=false&type=MESSAGE&page=1&limit=10",
+    {
+      method: "GET",
+    },
+  );
+
+  logSuccess("Filter Unread Notifications");
+}
+
+async function testGetUnreadNotificationCount() {
+  const result = await request(
+    "/notifications/unread-count",
+    {
+      method: "GET",
+    },
+  );
+
+  if (
+    typeof result.data?.count !== "number" ||
+    result.data.count < 1
+  ) {
+    throw new Error(
+      "Le compteur de notifications non lues est invalide.",
+    );
+  }
+
+  logSuccess("Get Unread Notification Count");
+}
+
+async function testMarkNotificationAsRead() {
+  const result = await request(
+    `/notifications/${notificationId}/read`,
+    {
+      method: "PATCH",
+    },
+  );
+
+  if (result.data?.isRead !== true) {
+    throw new Error(
+      "La notification n'a pas été marquée comme lue.",
+    );
+  }
+
+  logSuccess("Mark Notification As Read");
+}
+
+async function testCreateSecondNotificationFixture() {
+  const notification = await createNotification({
+    userId: primaryUserId,
+    type: "SYSTEM",
+    title: "Notification système de test",
+    message:
+      "Cette deuxième notification sert à tester la lecture globale.",
+    data: {
+      source: "test-api-read-all",
+    },
+  });
+
+  if (!notification?.id) {
+    throw new Error(
+      "La deuxième notification de test n'a pas été créée.",
+    );
+  }
+
+  logSuccess("Create Second Notification Fixture");
+}
+
+async function testMarkAllNotificationsAsRead() {
+  const result = await request(
+    "/notifications/read-all",
+    {
+      method: "PATCH",
+    },
+  );
+
+  if (result.data?.unreadCount !== 0) {
+    throw new Error(
+      "Toutes les notifications n'ont pas été marquées comme lues.",
+    );
+  }
+
+  logSuccess("Mark All Notifications As Read");
+}
+
+async function testDeleteNotification() {
+  await request(`/notifications/${notificationId}`, {
+    method: "DELETE",
+  });
+
+  notificationId = null;
+
+  logSuccess("Delete Notification");
+}
+
 /*
 |--------------------------------------------------------------------------
 | Conversation cleanup
@@ -711,18 +958,31 @@ async function testLeaveConversation() {
 |--------------------------------------------------------------------------
 */
 
+
 async function testCreateComment() {
-  const result = await request(`/posts/${postId}/comments`, {
-    method: "POST",
-    body: JSON.stringify({
-      content: "Commentaire automatique de soutien.",
-    }),
-  });
+  const result = await request(
+    `/posts/${postId}/comments`,
+    {
+      method: "POST",
+      token: secondAccessToken,
+      body: JSON.stringify({
+        content:
+          "Commentaire automatique de soutien.",
+      }),
+    },
+  );
 
   commentId = result.data.id;
 
+  if (!commentId) {
+    throw new Error(
+      "La création du commentaire n'a retourné aucun identifiant.",
+    );
+  }
+
   logSuccess("Create Comment");
 }
+
 
 async function testGetComments() {
   await request(`/posts/${postId}/comments`, {
@@ -735,8 +995,10 @@ async function testGetComments() {
 async function testUpdateComment() {
   await request(`/comments/${commentId}`, {
     method: "PATCH",
+    token: secondAccessToken,
     body: JSON.stringify({
-      content: "Commentaire automatique mis à jour.",
+      content:
+        "Commentaire automatique mis à jour.",
     }),
   });
 
@@ -746,9 +1008,41 @@ async function testUpdateComment() {
 async function testDeleteComment() {
   await request(`/comments/${commentId}`, {
     method: "DELETE",
+    token: secondAccessToken,
   });
 
+  commentId = null;
+
   logSuccess("Delete Comment");
+}
+
+
+async function testGetCommentNotification() {
+  const result = await request(
+    "/notifications?type=COMMENT&page=1&limit=20",
+    {
+      method: "GET",
+    },
+  );
+
+  const notifications =
+    result.data?.items || [];
+
+  const notification = notifications.find(
+    (item) =>
+      item.type === "COMMENT" &&
+      item.data?.postId === postId &&
+      item.data?.commentId === commentId &&
+      item.actor?.id === secondUserId,
+  );
+
+  if (!notification) {
+    throw new Error(
+      "La notification de commentaire n'a pas été créée.",
+    );
+  }
+
+  logSuccess("Get Comment Notification");
 }
 
 /*
@@ -763,6 +1057,379 @@ async function testDeletePost() {
   });
 
   logSuccess("Delete Post");
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Users
+|--------------------------------------------------------------------------
+*/
+
+async function testGetMyUserProfile() {
+  const result = await request("/users/me", {
+    method: "GET",
+  });
+
+  if (result.data?.id !== primaryUserId) {
+    throw new Error("Le profil courant retourné est invalide.");
+  }
+
+  logSuccess("Get My User Profile");
+}
+
+async function testUpdateMyUserProfile() {
+  const result = await request("/users/me", {
+    method: "PATCH",
+    body: JSON.stringify({
+      bio: "Profil mis à jour automatiquement par test-api.js.",
+      country: "Sénégal",
+      city: "Dakar",
+      language: "fr",
+      currentMood: "MOTIVATED",
+    }),
+  });
+
+  if (result.data?.bio !== "Profil mis à jour automatiquement par test-api.js.") {
+    throw new Error("La mise à jour du profil a échoué.");
+  }
+
+  logSuccess("Update My User Profile");
+}
+
+async function testUpdateMyPrivacy() {
+  const result = await request("/users/me/privacy", {
+    method: "PATCH",
+    body: JSON.stringify({
+      visibility: "PUBLIC",
+      isPrivate: false,
+      allowAI: true,
+    }),
+  });
+
+  if (result.data?.visibility !== "PUBLIC") {
+    throw new Error("La mise à jour de la confidentialité a échoué.");
+  }
+
+  logSuccess("Update My Privacy");
+}
+
+async function testGetPublicUserProfile() {
+  const result = await request(`/users/${primaryUserId}`, {
+    method: "GET",
+    token: secondAccessToken,
+  });
+
+  if (result.data?.id !== primaryUserId) {
+    throw new Error("Le profil public retourné est invalide.");
+  }
+
+  logSuccess("Get Public User Profile");
+}
+
+async function testCreateDisposableUser() {
+  const result = await request("/auth/register", {
+    method: "POST",
+    token: null,
+    body: JSON.stringify(disposableUser),
+  });
+
+  disposableUserToken = result.data.accessToken;
+  disposableUserId = result.data.user.id;
+
+  if (!disposableUserToken || !disposableUserId) {
+    throw new Error(
+      "La création de l'utilisateur temporaire a retourné des données invalides.",
+    );
+  }
+
+  logSuccess("Create Disposable User");
+}
+
+async function testChangeDisposableUserPassword() {
+  const newPassword = "password456";
+
+  await request("/users/me/password", {
+    method: "PATCH",
+    token: disposableUserToken,
+    body: JSON.stringify({
+      currentPassword: disposableUserPassword,
+      newPassword,
+      confirmPassword: newPassword,
+    }),
+  });
+
+  disposableUserPassword = newPassword;
+
+  const loginResult = await request("/auth/login", {
+    method: "POST",
+    token: null,
+    body: JSON.stringify({
+      email: disposableUser.email,
+      password: disposableUserPassword,
+    }),
+  });
+
+  disposableUserToken = loginResult.data.accessToken;
+
+  logSuccess("Change Disposable User Password");
+}
+
+async function testDeactivateDisposableUser() {
+  await request("/users/me", {
+    method: "DELETE",
+    token: disposableUserToken,
+    body: JSON.stringify({
+      password: disposableUserPassword,
+    }),
+  });
+
+  disposableUserToken = null;
+
+  logSuccess("Deactivate Disposable User");
+}
+
+
+
+/*
+|--------------------------------------------------------------------------
+| Supports
+|--------------------------------------------------------------------------
+*/
+
+async function testCreateSupportRequest() {
+  const result = await request("/supports", {
+    method: "POST",
+    body: JSON.stringify({
+      type: "LISTENING",
+      message:
+        "J'ai besoin d'être écouté quelques instants pour mieux organiser mes idées.",
+      isAnonymous: false,
+    }),
+  });
+
+  supportRequestId = result.data.id;
+
+  if (!supportRequestId) {
+    throw new Error(
+      "La création de la demande de soutien n'a retourné aucun identifiant.",
+    );
+  }
+
+  logSuccess("Create Support Request");
+}
+
+async function testGetAvailableSupportRequests() {
+  const result = await request(
+    "/supports?type=LISTENING&page=1&limit=20",
+    {
+      method: "GET",
+      token: secondAccessToken,
+    },
+  );
+
+  const items = result.data?.items || [];
+
+  const supportRequest = items.find(
+    (item) => item.id === supportRequestId,
+  );
+
+  if (!supportRequest) {
+    throw new Error(
+      "La demande de soutien n'apparaît pas dans les demandes disponibles.",
+    );
+  }
+
+  logSuccess("Get Available Support Requests");
+}
+
+async function testGetSupportRequestById() {
+  const result = await request(
+    `/supports/${supportRequestId}`,
+    {
+      method: "GET",
+      token: secondAccessToken,
+    },
+  );
+
+  if (result.data?.id !== supportRequestId) {
+    throw new Error(
+      "Le détail de la demande de soutien est invalide.",
+    );
+  }
+
+  logSuccess("Get Support Request By Id");
+}
+
+async function testAcceptSupportRequest() {
+  const result = await request(
+    `/supports/${supportRequestId}/accept`,
+    {
+      method: "PATCH",
+      token: secondAccessToken,
+    },
+  );
+
+  if (
+    result.data?.status !== "ACCEPTED" ||
+    result.data?.supporter?.id !== secondUserId
+  ) {
+    throw new Error(
+      "L'acceptation de la demande de soutien a échoué.",
+    );
+  }
+
+  logSuccess("Accept Support Request");
+}
+
+async function testGetSupportAcceptedNotification() {
+  const result = await request(
+    "/notifications?type=SUPPORT_ACCEPTED&page=1&limit=20",
+    {
+      method: "GET",
+    },
+  );
+
+  const notifications = result.data?.items || [];
+
+  const notification = notifications.find(
+    (item) =>
+      item.type === "SUPPORT_ACCEPTED" &&
+      item.data?.supportRequestId === supportRequestId &&
+      item.actor?.id === secondUserId,
+  );
+
+  if (!notification) {
+    throw new Error(
+      "La notification d'acceptation du soutien n'a pas été créée.",
+    );
+  }
+
+  logSuccess("Get Support Accepted Notification");
+}
+
+async function testGetMySupportRequestsAsRequester() {
+  const result = await request(
+    "/supports/mine?role=requester&status=ACCEPTED&page=1&limit=20",
+    {
+      method: "GET",
+    },
+  );
+
+  const items = result.data?.items || [];
+
+  if (!items.some((item) => item.id === supportRequestId)) {
+    throw new Error(
+      "La demande n'apparaît pas dans les soutiens du demandeur.",
+    );
+  }
+
+  logSuccess("Get My Support Requests As Requester");
+}
+
+async function testGetMySupportRequestsAsSupporter() {
+  const result = await request(
+    "/supports/mine?role=supporter&status=ACCEPTED&page=1&limit=20",
+    {
+      method: "GET",
+      token: secondAccessToken,
+    },
+  );
+
+  const items = result.data?.items || [];
+
+  if (!items.some((item) => item.id === supportRequestId)) {
+    throw new Error(
+      "La demande n'apparaît pas dans les soutiens de l'accompagnant.",
+    );
+  }
+
+  logSuccess("Get My Support Requests As Supporter");
+}
+
+async function testCompleteSupportRequest() {
+  const result = await request(
+    `/supports/${supportRequestId}/complete`,
+    {
+      method: "PATCH",
+    },
+  );
+
+  if (result.data?.status !== "COMPLETED") {
+    throw new Error(
+      "La clôture de la demande de soutien a échoué.",
+    );
+  }
+
+  logSuccess("Complete Support Request");
+}
+
+async function testGetSupportCompletedNotification() {
+  const result = await request(
+    "/notifications?type=SUPPORT_COMPLETED&page=1&limit=20",
+    {
+      method: "GET",
+      token: secondAccessToken,
+    },
+  );
+
+  const notifications = result.data?.items || [];
+
+  const notification = notifications.find(
+    (item) =>
+      item.type === "SUPPORT_COMPLETED" &&
+      item.data?.supportRequestId === supportRequestId &&
+      item.actor?.id === primaryUserId,
+  );
+
+  if (!notification) {
+    throw new Error(
+      "La notification de clôture du soutien n'a pas été créée.",
+    );
+  }
+
+  logSuccess("Get Support Completed Notification");
+}
+
+async function testCreateCancellableSupportRequest() {
+  const result = await request("/supports", {
+    method: "POST",
+    body: JSON.stringify({
+      type: "ENCOURAGEMENT",
+      message:
+        "J'ai besoin d'un message d'encouragement pour poursuivre mon travail.",
+      isAnonymous: true,
+    }),
+  });
+
+  cancellableSupportRequestId = result.data.id;
+
+  if (!cancellableSupportRequestId) {
+    throw new Error(
+      "La demande de soutien à annuler n'a pas été créée.",
+    );
+  }
+
+  logSuccess("Create Cancellable Support Request");
+}
+
+async function testCancelSupportRequest() {
+  const result = await request(
+    `/supports/${cancellableSupportRequestId}/cancel`,
+    {
+      method: "PATCH",
+    },
+  );
+
+  if (result.data?.status !== "CANCELLED") {
+    throw new Error(
+      "L'annulation de la demande de soutien a échoué.",
+    );
+  }
+
+  cancellableSupportRequestId = null;
+
+  logSuccess("Cancel Support Request");
 }
 
 /*
@@ -793,11 +1460,14 @@ async function runTests() {
 
     console.log("\n--- REACTIONS ---");
 
-    await testCreateReaction();
-    await testUpdateReaction();
-    await testGetReactions();
-    await testGetReactionSummary();
-    await testDeleteReaction();
+
+
+await testCreateReaction();
+await testGetReactionNotification();
+await testUpdateReaction();
+await testGetReactions();
+await testGetReactionSummary();
+await testDeleteReaction();
 
     console.log("\n--- CONVERSATIONS ---");
 
@@ -808,10 +1478,11 @@ async function runTests() {
     console.log("\n--- MESSAGES ---");
 
     await testCreateMessage();
-    await testGetMessages();
-    await testUpdateMessage();
-    await testMarkMessageAsRead();
-    await testDeleteMessage();
+await testGetMessageNotification();
+await testGetMessages();
+await testUpdateMessage();
+await testMarkMessageAsRead();
+await testDeleteMessage();
 
     console.log("\n--- MEDIA ---");
 
@@ -831,6 +1502,7 @@ async function runTests() {
     await testGetGroupMembers();
 
     await testSecondUserJoinGroup();
+    await testGetGroupJoinNotification();
     await testSecondUserGetGroup();
     await testSecondUserGetMyGroups();
 
@@ -855,16 +1527,51 @@ async function runTests() {
     await testUpdateJournalEntry();
     await testDeleteJournalEntry();
 
+    console.log("\n--- NOTIFICATIONS ---");
+
+    await testCreateNotificationFixture();
+    await testGetNotifications();
+    await testFilterUnreadNotifications();
+    await testGetUnreadNotificationCount();
+    await testMarkNotificationAsRead();
+    await testCreateSecondNotificationFixture();
+    await testMarkAllNotificationsAsRead();
+    await testDeleteNotification();
+
     console.log("\n--- CONVERSATION CLEANUP ---");
 
     await testLeaveConversation();
 
     console.log("\n--- COMMENTS ---");
 
-    await testCreateComment();
-    await testGetComments();
-    await testUpdateComment();
-    await testDeleteComment();
+await testCreateComment();
+await testGetCommentNotification();
+await testGetComments();
+await testUpdateComment();
+await testDeleteComment();
+    console.log("\n--- USERS ---");
+
+    await testGetMyUserProfile();
+    await testUpdateMyUserProfile();
+    await testUpdateMyPrivacy();
+    await testGetPublicUserProfile();
+    await testCreateDisposableUser();
+    await testChangeDisposableUserPassword();
+    await testDeactivateDisposableUser();
+
+    console.log("\n--- SUPPORTS ---");
+
+    await testCreateSupportRequest();
+    await testGetAvailableSupportRequests();
+    await testGetSupportRequestById();
+    await testAcceptSupportRequest();
+    await testGetSupportAcceptedNotification();
+    await testGetMySupportRequestsAsRequester();
+    await testGetMySupportRequestsAsSupporter();
+    await testCompleteSupportRequest();
+    await testGetSupportCompletedNotification();
+    await testCreateCancellableSupportRequest();
+    await testCancelSupportRequest();
 
     console.log("\n--- POST CLEANUP ---");
 
