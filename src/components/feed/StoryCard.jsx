@@ -1,8 +1,8 @@
 export default function StoryCard({ emoji, title, active }) {
   return (
-    <div className={`story-card ${active ? "active" : ""}`}>
-      <span>{emoji}</span>
+    <button className={`story-card story-card-v3 ${active ? "active" : ""}`}>
+      <span aria-hidden="true">{emoji}</span>
       <strong>{title}</strong>
-    </div>
+    </button>
   );
 }

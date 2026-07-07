@@ -1,4 +1,4 @@
-import { HeartHandshake, Lock, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, Lock, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import { ROUTES } from "../utils/constants.js";
@@ -13,34 +13,32 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="login-page">
-      <section className="login-hero">
-        <div className="login-brand">
-          <div className="logo-mark">H</div>
+    <main className="login-page login-page-v3">
+      <section className="login-hero login-hero-v3">
+        <div className="login-brand login-brand-v3">
+          <span className="brand-orbit" aria-hidden="true"><i /><i /><i /></span>
           <span>HealSpace</span>
         </div>
 
-        <h1>Un réseau social pour parler, respirer et se reconstruire.</h1>
+        <div className="login-editorial">
+          <span className="login-index">01 — ESPACE SÛR</span>
+          <h1>Vous n’avez pas besoin d’aller bien pour être entendu.</h1>
+          <p>Un réseau de soutien conçu pour parler avec sincérité, sans bruit et sans jugement.</p>
+        </div>
 
-        <p>
-          Une communauté de soutien émotionnel avec publications anonymes,
-          groupes privés, messagerie et espace d’aide immédiate.
-        </p>
-
-        <div className="feature-list">
-          <Feature icon={<Users />} title="Groupes de soutien" />
-          <Feature icon={<HeartHandshake />} title="Réactions bienveillantes" />
-          <Feature icon={<ShieldCheck />} title="Espace sécurisé" />
+        <div className="login-proof">
+          <ShieldCheck size={16} />
+          <span>Confidentialité, anonymat et contrôle de vos publications.</span>
         </div>
       </section>
 
-      <section className="auth-card">
-        <div className="auth-icon">
-          <Lock />
+      <section className="auth-card auth-card-v3">
+        <div className="auth-card__topline">
+          <span>Accès prototype</span>
+          <Lock size={16} />
         </div>
-
-        <h2>Connexion démo</h2>
-        <p>Prototype exécutable — aucune donnée réelle n’est envoyée.</p>
+        <h2>Reprendre là où vous vous êtes arrêté.</h2>
+        <p>Utilisez les identifiants de démonstration déjà préparés.</p>
 
         <label>Email</label>
         <input value="ezekiel@healspace.app" readOnly />
@@ -49,22 +47,12 @@ export default function LoginPage() {
         <input value="12345678" type="password" readOnly />
 
         <button onClick={handleLogin} disabled={isLoading}>
-          {isLoading ? "Connexion..." : "Entrer dans HealSpace"}
+          <span>{isLoading ? "Connexion..." : "Entrer dans HealSpace"}</span>
+          <ArrowRight size={16} />
         </button>
 
-        <small>
-          La vraie authentification sera ajoutée avec Node.js, JWT et PostgreSQL.
-        </small>
+        <small>Prototype local : aucune donnée réelle n’est envoyée.</small>
       </section>
     </main>
-  );
-}
-
-function Feature({ icon, title }) {
-  return (
-    <div className="feature-pill">
-      {icon}
-      <span>{title}</span>
-    </div>
   );
 }

@@ -54,14 +54,14 @@ export default function NotificationsPage() {
   const unreadCount = enrichedNotifications.filter((notification) => notification.unread).length;
 
   return (
-    <main className="feed">
+    <main className="feed page-v5 notifications-page-v5">
       <PageHeader
         title="Notifications"
         subtitle={unreadCount > 0 ? `${unreadCount} notification(s) non lue(s).` : "Tu es à jour."}
       />
 
-      <div className="notifications-toolbar">
-        <section className="filters notifications-tabs">
+      <div className="notifications-toolbar notifications-toolbar-v5">
+        <section className="filters notifications-tabs notifications-tabs-v5">
           {TABS.map((tab) => (
             <button
               key={tab}
@@ -80,7 +80,7 @@ export default function NotificationsPage() {
         )}
       </div>
 
-      <section className="panel">
+      <section className="panel notifications-list-v5">
         {visibleNotifications.length === 0 ? (
           <EmptyState
             icon={<BellOff size={32} />}
@@ -89,8 +89,8 @@ export default function NotificationsPage() {
           />
         ) : (
           visibleNotifications.map((notification) => (
-            <div
-              className={`notification-row ${notification.unread ? "unread" : ""}`}
+            <article
+              className={`notification-row notification-card-v5 ${notification.unread ? "unread" : ""}`}
               key={notification.id}
               role="button"
               tabIndex={0}
@@ -99,20 +99,26 @@ export default function NotificationsPage() {
                 if (event.key === "Enter" || event.key === " ") markAsRead(notification.id);
               }}
             >
-              <span className="notification-icon">{notification.icon}</span>
-              <div>
-                <p>{notification.text}</p>
-                <span>{notification.time}</span>
+              <span className="notification-icon notification-icon-v5" aria-hidden="true">
+                {notification.icon}
+              </span>
+
+              <div className="notification-copy-v5">
+                <div className="notification-copy-v5__topline">
+                  <p>{notification.text}</p>
+                  {notification.unread && <span className="notification-status-v5">Nouveau</span>}
+                </div>
+                <span className="notification-time-v5">Il y a {notification.time}</span>
               </div>
-              {notification.unread && <span className="notification-dot" aria-hidden="true" />}
+
               <button
-                className="notification-delete"
+                className="notification-delete notification-delete-v5"
                 aria-label="Effacer la notification"
                 onClick={(event) => deleteNotification(notification.id, event)}
               >
-                <X size={14} />
+                <X size={16} />
               </button>
-            </div>
+            </article>
           ))
         )}
       </section>

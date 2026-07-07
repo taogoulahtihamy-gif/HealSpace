@@ -15,34 +15,28 @@ export default function PostActions({
 }) {
   return (
     <>
-      <div className="post-stats">
-        <span>
-          💙 <AnimatedCounter value={supportCount} formatter={formatCount} /> soutiens
-        </span>
-        <span>
-          <AnimatedCounter value={commentCount} /> commentaires · {shareCount} partages
-        </span>
+      <div className="post-stats post-stats-v3">
+        <span><AnimatedCounter value={supportCount} formatter={formatCount} /> soutiens</span>
+        <span><AnimatedCounter value={commentCount} /> réponses · {shareCount} partages</span>
       </div>
 
-      <div className="post-actions">
+      <div className="post-actions post-actions-v3">
         <button
           className={`support-btn ${liked ? "active" : ""} ${isPopping ? "pop" : ""}`.trim()}
           onClick={onSupportClick}
           aria-pressed={liked}
-          aria-label={liked ? "Retirer ton soutien" : "Soutenir cette publication"}
         >
-          <HeartHandshake size={18} /> Soutenir
+          <HeartHandshake size={15} /> Soutenir
         </button>
         <button
           className={`comment-toggle-btn ${showComments ? "active" : ""}`.trim()}
           onClick={onToggleComments}
           aria-expanded={showComments}
-          aria-label="Afficher ou masquer les commentaires"
         >
-          <MessageCircle size={18} /> Commenter
+          <MessageCircle size={15} /> Répondre
         </button>
-        <button className="share-btn" onClick={onShareClick} aria-label="Partager cette publication">
-          <Send size={18} /> Partager
+        <button className="share-btn" onClick={onShareClick}>
+          <Send size={15} /> Partager
         </button>
       </div>
     </>
