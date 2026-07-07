@@ -19,6 +19,34 @@ const secondUser = {
   password: "password123",
 };
 
+const moderationUserSeed = Date.now();
+
+const moderationUser = {
+  firstName: "Moderator",
+  lastName: "Test",
+  username: `healspace_moderator_${moderationUserSeed}`,
+  email: `healspace_moderator_${moderationUserSeed}@test.com`,
+  password: "password123",
+};
+
+const administrationUserSeed = Date.now();
+
+const administrationUser = {
+  firstName: "Admin",
+  lastName: "Test",
+  username: `healspace_admin_${administrationUserSeed}`,
+  email: `healspace_admin_${administrationUserSeed}@test.com`,
+  password: "password123",
+};
+
+const administrationTargetUser = {
+  firstName: "AdminTarget",
+  lastName: "Test",
+  username: `healspace_admin_target_${administrationUserSeed}`,
+  email: `healspace_admin_target_${administrationUserSeed}@test.com`,
+  password: "password123",
+};
+
 let disposableUserToken = null;
 let disposableUserId = null;
 let disposableUserPassword = "password123";
@@ -35,6 +63,14 @@ const disposableUser = {
 
 let accessToken = null;
 let secondAccessToken = null;
+let moderationAccessToken = null;
+let moderationUserId = null;
+let rejectedReportId = null;
+let friendshipId = null;
+let administrationAccessToken = null;
+let administrationUserId = null;
+let administrationTargetUserId = null;
+let administrationGroupId = null;
 
 let primaryUserId = null;
 let secondUserId = null;
@@ -50,6 +86,7 @@ let journalEntryId = null;
 let notificationId = null;
 let supportRequestId = null;
 let cancellableSupportRequestId = null;
+let reportId = null;
 
 function logSuccess(message) {
   console.log(`✅ ${message}`);
@@ -1432,6 +1469,1111 @@ async function testCancelSupportRequest() {
   logSuccess("Cancel Support Request");
 }
 
+
+/*
+|--------------------------------------------------------------------------
+| Reports
+|--------------------------------------------------------------------------
+*/
+
+async function testCreateReport() {
+  const result = await request("/reports", {
+    method: "POST",
+    token: secondAccessToken,
+    body: JSON.stringify({
+      targetType: "POST",
+      targetId: postId,
+      reason: "SPAM",
+      description:
+        "Ce signalement est créé automatiquement pour tester le module Reports.",
+    }),
+  });
+
+  reportId = result.data.id;
+
+  if (
+    !reportId ||
+    result.data?.status !== "PENDING" ||
+    result.data?.reporter?.id !== secondUserId
+  ) {
+    throw new Error(
+      "La création du signalement a retourné des données invalides.",
+    );
+  }
+
+  logSuccess("Create Report");
+}
+
+async function testGetMyReports() {
+  const result = await request(
+    "/reports/mine?targetType=POST&status=PENDING&page=1&limit=20",
+    {
+      method: "GET",
+      token: secondAccessToken,
+    },
+  );
+
+  const items = result.data?.items || [];
+
+  if (!items.some((item) => item.id === reportId)) {
+    throw new Error(
+      "Le signalement n'apparaît pas dans la liste du déclarant.",
+    );
+  }
+
+  logSuccess("Get My Reports");
+}
+
+async function testGetReportById() {
+  const result = await request(
+    `/reports/${reportId}`,
+    {
+      method: "GET",
+      token: secondAccessToken,
+    },
+  );
+
+  if (
+    result.data?.id !== reportId ||
+    result.data?.targetId !== postId
+  ) {
+    throw new Error(
+      "Le détail du signalement retourné est invalide.",
+    );
+  }
+
+  logSuccess("Get Report By Id");
+}
+
+async function testRejectDuplicateActiveReport() {
+  try {
+    await request("/reports", {
+      method: "POST",
+      token: secondAccessToken,
+      body: JSON.stringify({
+        targetType: "POST",
+        targetId: postId,
+        reason: "SPAM",
+        description:
+          "Tentative volontaire de création d'un signalement en double.",
+      }),
+    });
+  } catch (error) {
+    if (error.status === 409) {
+      logSuccess("Reject Duplicate Active Report");
+      return;
+    }
+
+    throw error;
+  }
+
+  throw new Error(
+    "Le doublon de signalement actif aurait dû être refusé.",
+  );
+}
+
+async function testProtectReportOwnership() {
+  try {
+    await request(`/reports/${reportId}`, {
+      method: "GET",
+    });
+  } catch (error) {
+    if (error.status === 404) {
+      logSuccess("Protect Report Ownership");
+      return;
+    }
+
+    throw error;
+  }
+
+  throw new Error(
+    "Un utilisateur ne doit pas pouvoir consulter le signalement d'un autre utilisateur.",
+  );
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Moderation
+|--------------------------------------------------------------------------
+*/
+
+async function testCreateModeratorUser() {
+  const registerResult = await request("/auth/register", {
+    method: "POST",
+    token: null,
+    body: JSON.stringify(moderationUser),
+  });
+
+  moderationUserId = registerResult.data.user.id;
+
+  await prisma.user.update({
+    where: {
+      id: moderationUserId,
+    },
+    data: {
+      role: "MODERATOR",
+    },
+  });
+
+  const loginResult = await request("/auth/login", {
+    method: "POST",
+    token: null,
+    body: JSON.stringify({
+      email: moderationUser.email,
+      password: moderationUser.password,
+    }),
+  });
+
+  moderationAccessToken =
+    loginResult.data.accessToken;
+
+  if (
+    !moderationUserId ||
+    !moderationAccessToken
+  ) {
+    throw new Error(
+      "La création de l'utilisateur modérateur a échoué.",
+    );
+  }
+
+  logSuccess("Create Moderator User");
+}
+
+async function testRejectUnauthorizedModerationAccess() {
+  try {
+    await request("/moderation/reports", {
+      method: "GET",
+    });
+  } catch (error) {
+    if (error.status === 403) {
+      logSuccess(
+        "Reject Unauthorized Moderation Access",
+      );
+      return;
+    }
+
+    throw error;
+  }
+
+  throw new Error(
+    "Un utilisateur standard ne doit pas accéder à la modération.",
+  );
+}
+
+async function testGetModerationReports() {
+  const result = await request(
+    "/moderation/reports?status=PENDING&page=1&limit=20",
+    {
+      method: "GET",
+      token: moderationAccessToken,
+    },
+  );
+
+  const items = result.data?.items || [];
+
+  if (!items.some((item) => item.id === reportId)) {
+    throw new Error(
+      "Le signalement n'apparaît pas dans la file de modération.",
+    );
+  }
+
+  logSuccess("Get Moderation Reports");
+}
+
+async function testGetModerationReportById() {
+  const result = await request(
+    `/moderation/reports/${reportId}`,
+    {
+      method: "GET",
+      token: moderationAccessToken,
+    },
+  );
+
+  if (result.data?.id !== reportId) {
+    throw new Error(
+      "Le détail du signalement de modération est invalide.",
+    );
+  }
+
+  logSuccess("Get Moderation Report By Id");
+}
+
+async function testStartReportReview() {
+  const result = await request(
+    `/moderation/reports/${reportId}/review`,
+    {
+      method: "PATCH",
+      token: moderationAccessToken,
+    },
+  );
+
+  if (
+    result.data?.status !== "UNDER_REVIEW" ||
+    result.data?.reviewer?.id !== moderationUserId
+  ) {
+    throw new Error(
+      "La prise en charge du signalement a échoué.",
+    );
+  }
+
+  logSuccess("Start Report Review");
+}
+
+async function testResolveReport() {
+  const result = await request(
+    `/moderation/reports/${reportId}/resolve`,
+    {
+      method: "PATCH",
+      token: moderationAccessToken,
+      body: JSON.stringify({
+        resolutionNote:
+          "Signalement analysé et résolu par le test automatisé HealSpace.",
+      }),
+    },
+  );
+
+  if (
+    result.data?.status !== "RESOLVED" ||
+    result.data?.moderationActions?.length < 2
+  ) {
+    throw new Error(
+      "La résolution du signalement a échoué.",
+    );
+  }
+
+  logSuccess("Resolve Report");
+}
+
+async function testCreateReportForRejection() {
+  const result = await request("/reports", {
+    method: "POST",
+    token: secondAccessToken,
+    body: JSON.stringify({
+      targetType: "POST",
+      targetId: postId,
+      reason: "OTHER",
+      description:
+        "Deuxième signalement créé pour tester le rejet par un modérateur.",
+    }),
+  });
+
+  rejectedReportId = result.data.id;
+
+  if (!rejectedReportId) {
+    throw new Error(
+      "Le signalement destiné au test de rejet n'a pas été créé.",
+    );
+  }
+
+  logSuccess("Create Report For Rejection");
+}
+
+async function testRejectReport() {
+  const result = await request(
+    `/moderation/reports/${rejectedReportId}/reject`,
+    {
+      method: "PATCH",
+      token: moderationAccessToken,
+      body: JSON.stringify({
+        resolutionNote:
+          "Signalement rejeté après vérification dans le test automatisé.",
+      }),
+    },
+  );
+
+  if (result.data?.status !== "REJECTED") {
+    throw new Error(
+      "Le rejet du signalement a échoué.",
+    );
+  }
+
+  logSuccess("Reject Report");
+}
+
+async function testSuspendUser() {
+  const result = await request(
+    `/moderation/users/${primaryUserId}/status`,
+    {
+      method: "PATCH",
+      token: moderationAccessToken,
+      body: JSON.stringify({
+        status: "SUSPENDED",
+        note:
+          "Suspension temporaire réalisée par le test automatisé de modération.",
+      }),
+    },
+  );
+
+  if (result.data?.status !== "SUSPENDED") {
+    throw new Error(
+      "La suspension de l'utilisateur a échoué.",
+    );
+  }
+
+  logSuccess("Suspend User");
+}
+
+async function testReactivateUser() {
+  const result = await request(
+    `/moderation/users/${primaryUserId}/status`,
+    {
+      method: "PATCH",
+      token: moderationAccessToken,
+      body: JSON.stringify({
+        status: "ACTIVE",
+        note:
+          "Réactivation immédiate après validation du test de modération.",
+      }),
+    },
+  );
+
+  if (result.data?.status !== "ACTIVE") {
+    throw new Error(
+      "La réactivation de l'utilisateur a échoué.",
+    );
+  }
+
+  logSuccess("Reactivate User");
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Friendships
+|--------------------------------------------------------------------------
+*/
+
+async function resetFriendshipFixture() {
+  const [userOneId, userTwoId] = [
+    primaryUserId,
+    secondUserId,
+  ].sort();
+
+  await prisma.friendship.deleteMany({
+    where: {
+      userOneId,
+      userTwoId,
+    },
+  });
+
+  friendshipId = null;
+
+  logSuccess("Reset Friendship Fixture");
+}
+
+async function testSendFriendRequest() {
+  const result = await request(
+    `/friendships/requests/${secondUserId}`,
+    {
+      method: "POST",
+    },
+  );
+
+  friendshipId = result.data.id;
+
+  if (
+    !friendshipId ||
+    result.data?.status !== "PENDING"
+  ) {
+    throw new Error(
+      "La demande d'amitié créée est invalide.",
+    );
+  }
+
+  logSuccess("Send Friend Request");
+}
+
+async function testGetOutgoingFriendRequests() {
+  const result = await request(
+    "/friendships/requests/outgoing?page=1&limit=20",
+    {
+      method: "GET",
+    },
+  );
+
+  const items = result.data?.items || [];
+
+  if (!items.some((item) => item.id === friendshipId)) {
+    throw new Error(
+      "La demande n'apparaît pas dans les demandes sortantes.",
+    );
+  }
+
+  logSuccess("Get Outgoing Friend Requests");
+}
+
+async function testGetIncomingFriendRequests() {
+  const result = await request(
+    "/friendships/requests/incoming?page=1&limit=20",
+    {
+      method: "GET",
+      token: secondAccessToken,
+    },
+  );
+
+  const items = result.data?.items || [];
+
+  if (!items.some((item) => item.id === friendshipId)) {
+    throw new Error(
+      "La demande n'apparaît pas dans les demandes reçues.",
+    );
+  }
+
+  logSuccess("Get Incoming Friend Requests");
+}
+
+async function testGetFriendRequestNotification() {
+  const result = await request(
+    "/notifications?type=FRIEND_REQUEST&page=1&limit=20",
+    {
+      method: "GET",
+      token: secondAccessToken,
+    },
+  );
+
+  const notifications = result.data?.items || [];
+
+  const notification = notifications.find(
+    (item) =>
+      item.type === "FRIEND_REQUEST" &&
+      item.data?.friendshipId === friendshipId &&
+      item.actor?.id === primaryUserId,
+  );
+
+  if (!notification) {
+    throw new Error(
+      "La notification de demande d'amitié n'a pas été créée.",
+    );
+  }
+
+  logSuccess("Get Friend Request Notification");
+}
+
+async function testAcceptFriendRequest() {
+  const result = await request(
+    `/friendships/requests/${friendshipId}/accept`,
+    {
+      method: "PATCH",
+      token: secondAccessToken,
+    },
+  );
+
+  if (result.data?.status !== "ACCEPTED") {
+    throw new Error(
+      "L'acceptation de la demande d'amitié a échoué.",
+    );
+  }
+
+  logSuccess("Accept Friend Request");
+}
+
+async function testGetFriendAcceptedNotification() {
+  const result = await request(
+    "/notifications?type=FRIEND_ACCEPTED&page=1&limit=20",
+    {
+      method: "GET",
+    },
+  );
+
+  const notifications = result.data?.items || [];
+
+  const notification = notifications.find(
+    (item) =>
+      item.type === "FRIEND_ACCEPTED" &&
+      item.data?.friendshipId === friendshipId &&
+      item.actor?.id === secondUserId,
+  );
+
+  if (!notification) {
+    throw new Error(
+      "La notification d'acceptation d'amitié n'a pas été créée.",
+    );
+  }
+
+  logSuccess("Get Friend Accepted Notification");
+}
+
+async function testGetFriends() {
+  const result = await request(
+    "/friendships?page=1&limit=20",
+    {
+      method: "GET",
+    },
+  );
+
+  const items = result.data?.items || [];
+
+  if (
+    !items.some(
+      (item) => item.friend?.id === secondUserId,
+    )
+  ) {
+    throw new Error(
+      "L'ami n'apparaît pas dans la liste.",
+    );
+  }
+
+  logSuccess("Get Friends");
+}
+
+async function testFriendsProfileVisibility() {
+  await request("/users/me/privacy", {
+    method: "PATCH",
+    body: JSON.stringify({
+      visibility: "FRIENDS",
+      isPrivate: false,
+      allowAI: true,
+    }),
+  });
+
+  const friendResult = await request(
+    `/users/${primaryUserId}`,
+    {
+      method: "GET",
+      token: secondAccessToken,
+    },
+  );
+
+  if (friendResult.data?.id !== primaryUserId) {
+    throw new Error(
+      "Un ami doit pouvoir consulter un profil FRIENDS.",
+    );
+  }
+
+  try {
+    await request(`/users/${primaryUserId}`, {
+      method: "GET",
+      token: moderationAccessToken,
+    });
+  } catch (error) {
+    if (error.status === 403) {
+      await request("/users/me/privacy", {
+        method: "PATCH",
+        body: JSON.stringify({
+          visibility: "PUBLIC",
+          isPrivate: false,
+          allowAI: true,
+        }),
+      });
+
+      logSuccess("Friends Profile Visibility");
+      return;
+    }
+
+    throw error;
+  }
+
+  throw new Error(
+    "Un non-ami ne doit pas accéder à un profil FRIENDS.",
+  );
+}
+
+async function testRemoveFriendship() {
+  await request(`/friendships/${friendshipId}`, {
+    method: "DELETE",
+  });
+
+  friendshipId = null;
+
+  logSuccess("Remove Friendship");
+}
+
+async function testSendFriendRequestForRejection() {
+  const result = await request(
+    `/friendships/requests/${secondUserId}`,
+    {
+      method: "POST",
+    },
+  );
+
+  friendshipId = result.data.id;
+
+  logSuccess("Send Friend Request For Rejection");
+}
+
+async function testRejectFriendRequest() {
+  const result = await request(
+    `/friendships/requests/${friendshipId}/reject`,
+    {
+      method: "PATCH",
+      token: secondAccessToken,
+    },
+  );
+
+  if (result.data?.status !== "REJECTED") {
+    throw new Error(
+      "Le refus de la demande d'amitié a échoué.",
+    );
+  }
+
+  logSuccess("Reject Friend Request");
+}
+
+async function testReopenFriendRequest() {
+  const result = await request(
+    `/friendships/requests/${secondUserId}`,
+    {
+      method: "POST",
+    },
+  );
+
+  friendshipId = result.data.id;
+
+  if (result.data?.status !== "PENDING") {
+    throw new Error(
+      "La réouverture de la demande a échoué.",
+    );
+  }
+
+  logSuccess("Reopen Friend Request");
+}
+
+async function testCancelFriendRequest() {
+  await request(
+    `/friendships/requests/${friendshipId}`,
+    {
+      method: "DELETE",
+    },
+  );
+
+  friendshipId = null;
+
+  logSuccess("Cancel Friend Request");
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| Administration
+|--------------------------------------------------------------------------
+*/
+
+async function testCreateAdministrationUsers() {
+  const adminRegistration = await request(
+    "/auth/register",
+    {
+      method: "POST",
+      token: null,
+      body: JSON.stringify(administrationUser),
+    },
+  );
+
+  administrationUserId =
+    adminRegistration.data.user.id;
+
+  await prisma.user.update({
+    where: {
+      id: administrationUserId,
+    },
+    data: {
+      role: "ADMIN",
+    },
+  });
+
+  const adminLogin = await request("/auth/login", {
+    method: "POST",
+    token: null,
+    body: JSON.stringify({
+      email: administrationUser.email,
+      password: administrationUser.password,
+    }),
+  });
+
+  administrationAccessToken =
+    adminLogin.data.accessToken;
+
+  const targetRegistration = await request(
+    "/auth/register",
+    {
+      method: "POST",
+      token: null,
+      body: JSON.stringify(
+        administrationTargetUser,
+      ),
+    },
+  );
+
+  administrationTargetUserId =
+    targetRegistration.data.user.id;
+
+  if (
+    !administrationUserId ||
+    !administrationAccessToken ||
+    !administrationTargetUserId
+  ) {
+    throw new Error(
+      "La préparation des utilisateurs Administration a échoué.",
+    );
+  }
+
+  logSuccess("Create Administration Users");
+}
+
+async function testRejectUnauthorizedAdministrationAccess() {
+  try {
+    await request("/admin/statistics", {
+      method: "GET",
+    });
+  } catch (error) {
+    if (error.status === 403) {
+      logSuccess(
+        "Reject Unauthorized Administration Access",
+      );
+      return;
+    }
+
+    throw error;
+  }
+
+  throw new Error(
+    "Un utilisateur standard ne doit pas accéder à l'administration.",
+  );
+}
+
+async function testGetAdministrationStatistics() {
+  const result = await request(
+    "/admin/statistics",
+    {
+      method: "GET",
+      token: administrationAccessToken,
+    },
+  );
+
+  if (
+    typeof result.data?.users?.total !== "number" ||
+    typeof result.data?.posts?.total !== "number" ||
+    typeof result.data?.reports?.total !== "number"
+  ) {
+    throw new Error(
+      "Les statistiques administratives sont invalides.",
+    );
+  }
+
+  logSuccess("Get Administration Statistics");
+}
+
+async function testGetAdministrationUsers() {
+  const result = await request(
+    `/admin/users?search=${encodeURIComponent(
+      administrationTargetUser.username,
+    )}&page=1&limit=20`,
+    {
+      method: "GET",
+      token: administrationAccessToken,
+    },
+  );
+
+  const items = result.data?.items || [];
+
+  if (
+    !items.some(
+      (item) =>
+        item.id === administrationTargetUserId,
+    )
+  ) {
+    throw new Error(
+      "L'utilisateur cible n'apparaît pas dans la liste administrative.",
+    );
+  }
+
+  logSuccess("Get Administration Users");
+}
+
+async function testGetAdministrationUserById() {
+  const result = await request(
+    `/admin/users/${administrationTargetUserId}`,
+    {
+      method: "GET",
+      token: administrationAccessToken,
+    },
+  );
+
+  if (
+    result.data?.id !==
+    administrationTargetUserId
+  ) {
+    throw new Error(
+      "Le détail administratif de l'utilisateur est invalide.",
+    );
+  }
+
+  logSuccess("Get Administration User By Id");
+}
+
+async function testUpdateAdministrationUserRole() {
+  const result = await request(
+    `/admin/users/${administrationTargetUserId}/role`,
+    {
+      method: "PATCH",
+      token: administrationAccessToken,
+      body: JSON.stringify({
+        role: "PSYCHOLOGIST",
+        note:
+          "Attribution temporaire du rôle psychologue pour le test Administration.",
+      }),
+    },
+  );
+
+  if (result.data?.role !== "PSYCHOLOGIST") {
+    throw new Error(
+      "La modification administrative du rôle a échoué.",
+    );
+  }
+
+  logSuccess("Update Administration User Role");
+}
+
+async function testRestoreAdministrationUserRole() {
+  const result = await request(
+    `/admin/users/${administrationTargetUserId}/role`,
+    {
+      method: "PATCH",
+      token: administrationAccessToken,
+      body: JSON.stringify({
+        role: "USER",
+        note:
+          "Restauration du rôle utilisateur après le test Administration.",
+      }),
+    },
+  );
+
+  if (result.data?.role !== "USER") {
+    throw new Error(
+      "La restauration du rôle utilisateur a échoué.",
+    );
+  }
+
+  logSuccess("Restore Administration User Role");
+}
+
+async function testSuspendAdministrationTargetUser() {
+  const result = await request(
+    `/admin/users/${administrationTargetUserId}/status`,
+    {
+      method: "PATCH",
+      token: administrationAccessToken,
+      body: JSON.stringify({
+        status: "SUSPENDED",
+        note:
+          "Suspension temporaire de l'utilisateur cible pour le test Administration.",
+      }),
+    },
+  );
+
+  if (result.data?.status !== "SUSPENDED") {
+    throw new Error(
+      "La suspension administrative a échoué.",
+    );
+  }
+
+  logSuccess("Suspend Administration Target User");
+}
+
+async function testReactivateAdministrationTargetUser() {
+  const result = await request(
+    `/admin/users/${administrationTargetUserId}/status`,
+    {
+      method: "PATCH",
+      token: administrationAccessToken,
+      body: JSON.stringify({
+        status: "ACTIVE",
+        note:
+          "Réactivation de l'utilisateur cible après le test Administration.",
+      }),
+    },
+  );
+
+  if (result.data?.status !== "ACTIVE") {
+    throw new Error(
+      "La réactivation administrative a échoué.",
+    );
+  }
+
+  logSuccess("Reactivate Administration Target User");
+}
+
+async function testGetAdministrationPosts() {
+  const result = await request(
+    `/admin/posts?authorId=${primaryUserId}&page=1&limit=20`,
+    {
+      method: "GET",
+      token: administrationAccessToken,
+    },
+  );
+
+  const items = result.data?.items || [];
+
+  if (!items.some((item) => item.id === postId)) {
+    throw new Error(
+      "La publication de test n'apparaît pas dans l'administration.",
+    );
+  }
+
+  logSuccess("Get Administration Posts");
+}
+
+async function testArchiveAdministrationPost() {
+  const result = await request(
+    `/admin/posts/${postId}/status`,
+    {
+      method: "PATCH",
+      token: administrationAccessToken,
+      body: JSON.stringify({
+        status: "ARCHIVED",
+        note:
+          "Archivage temporaire de la publication pour le test Administration.",
+      }),
+    },
+  );
+
+  if (result.data?.status !== "ARCHIVED") {
+    throw new Error(
+      "L'archivage administratif de la publication a échoué.",
+    );
+  }
+
+  logSuccess("Archive Administration Post");
+}
+
+async function testRestoreAdministrationPost() {
+  const result = await request(
+    `/admin/posts/${postId}/status`,
+    {
+      method: "PATCH",
+      token: administrationAccessToken,
+      body: JSON.stringify({
+        status: "PUBLISHED",
+        note:
+          "Restauration de la publication après le test Administration.",
+      }),
+    },
+  );
+
+  if (result.data?.status !== "PUBLISHED") {
+    throw new Error(
+      "La restauration administrative de la publication a échoué.",
+    );
+  }
+
+  logSuccess("Restore Administration Post");
+}
+
+async function testCreateAdministrationGroupFixture() {
+  const result = await request("/groups", {
+    method: "POST",
+    body: JSON.stringify({
+      name: `Administration Group ${Date.now()}`,
+      description:
+        "Groupe temporaire destiné au test du module Administration.",
+      visibility: "PUBLIC",
+    }),
+  });
+
+  administrationGroupId = result.data.id;
+
+  if (!administrationGroupId) {
+    throw new Error(
+      "Le groupe temporaire Administration n'a pas été créé.",
+    );
+  }
+
+  logSuccess("Create Administration Group Fixture");
+}
+
+async function testGetAdministrationGroups() {
+  const result = await request(
+    `/admin/groups?ownerId=${primaryUserId}&page=1&limit=20`,
+    {
+      method: "GET",
+      token: administrationAccessToken,
+    },
+  );
+
+  const items = result.data?.items || [];
+
+  if (
+    !items.some(
+      (item) => item.id === administrationGroupId,
+    )
+  ) {
+    throw new Error(
+      "Le groupe temporaire n'apparaît pas dans l'administration.",
+    );
+  }
+
+  logSuccess("Get Administration Groups");
+}
+
+async function testDeleteAdministrationGroup() {
+  const result = await request(
+    `/admin/groups/${administrationGroupId}`,
+    {
+      method: "DELETE",
+      token: administrationAccessToken,
+    },
+  );
+
+  if (
+    result.data?.id !== administrationGroupId
+  ) {
+    throw new Error(
+      "La suppression administrative du groupe a échoué.",
+    );
+  }
+
+  administrationGroupId = null;
+
+  logSuccess("Delete Administration Group");
+}
+
+async function testGetAdministrationReports() {
+  const result = await request(
+    "/admin/reports?page=1&limit=20",
+    {
+      method: "GET",
+      token: administrationAccessToken,
+    },
+  );
+
+  const items = result.data?.items || [];
+
+  if (!items.some((item) => item.id === reportId)) {
+    throw new Error(
+      "Le signalement n'apparaît pas dans la vue Administration.",
+    );
+  }
+
+  logSuccess("Get Administration Reports");
+}
+
+async function testGetAdministrationActions() {
+  const result = await request(
+    `/admin/moderation-actions?action=USER_ROLE_CHANGED&moderatorId=${administrationUserId}&page=1&limit=20`,
+    {
+      method: "GET",
+      token: administrationAccessToken,
+    },
+  );
+
+  const items = result.data?.items || [];
+
+  const roleAction = items.find(
+    (item) =>
+      item.action === "USER_ROLE_CHANGED" &&
+      item.targetUser?.id ===
+        administrationTargetUserId,
+  );
+
+  if (!roleAction) {
+    throw new Error(
+      "L'action administrative de changement de rôle n'a pas été journalisée.",
+    );
+  }
+
+  logSuccess("Get Administration Actions");
+}
+
 /*
 |--------------------------------------------------------------------------
 | Test runner
@@ -1573,6 +2715,64 @@ await testDeleteComment();
     await testCreateCancellableSupportRequest();
     await testCancelSupportRequest();
 
+    console.log("\n--- REPORTS ---");
+
+    await testCreateReport();
+    await testGetMyReports();
+    await testGetReportById();
+    await testRejectDuplicateActiveReport();
+    await testProtectReportOwnership();
+
+    console.log("\n--- MODERATION ---");
+
+    await testCreateModeratorUser();
+    await testRejectUnauthorizedModerationAccess();
+    await testGetModerationReports();
+    await testGetModerationReportById();
+    await testStartReportReview();
+    await testResolveReport();
+    await testCreateReportForRejection();
+    await testRejectReport();
+    await testSuspendUser();
+    await testReactivateUser();
+
+    console.log("\n--- FRIENDSHIPS ---");
+
+    await resetFriendshipFixture();
+    await testSendFriendRequest();
+    await testGetOutgoingFriendRequests();
+    await testGetIncomingFriendRequests();
+    await testGetFriendRequestNotification();
+    await testAcceptFriendRequest();
+    await testGetFriendAcceptedNotification();
+    await testGetFriends();
+    await testFriendsProfileVisibility();
+    await testRemoveFriendship();
+    await testSendFriendRequestForRejection();
+    await testRejectFriendRequest();
+    await testReopenFriendRequest();
+    await testCancelFriendRequest();
+
+    console.log("\n--- ADMINISTRATION ---");
+
+    await testCreateAdministrationUsers();
+    await testRejectUnauthorizedAdministrationAccess();
+    await testGetAdministrationStatistics();
+    await testGetAdministrationUsers();
+    await testGetAdministrationUserById();
+    await testUpdateAdministrationUserRole();
+    await testRestoreAdministrationUserRole();
+    await testSuspendAdministrationTargetUser();
+    await testReactivateAdministrationTargetUser();
+    await testGetAdministrationPosts();
+    await testArchiveAdministrationPost();
+    await testRestoreAdministrationPost();
+    await testCreateAdministrationGroupFixture();
+    await testGetAdministrationGroups();
+    await testDeleteAdministrationGroup();
+    await testGetAdministrationReports();
+    await testGetAdministrationActions();
+
     console.log("\n--- POST CLEANUP ---");
 
     await testDeletePost();
@@ -1582,8 +2782,10 @@ await testDeleteComment();
     console.log("=========================\n");
   } catch (error) {
     logError("API test failed", error);
-    process.exit(1);
+    process.exitCode = 1;
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
-runTests();
+await runTests();

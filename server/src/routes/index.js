@@ -13,6 +13,10 @@ import journalRoutes from "../modules/journal/journal.routes.js";
 import notificationRoutes from "../modules/notifications/notification.routes.js";
 import userRoutes from "../modules/users/user.routes.js";
 import supportRoutes from "../modules/supports/support.routes.js";
+import reportRoutes from "../modules/reports/report.routes.js";
+import moderationRoutes from "../modules/moderation/moderation.routes.js";
+import friendshipRoutes from "../modules/friendships/friendship.routes.js"
+import administrationRoutes from "../modules/administration/administration.routes.js";;
 
 const router = Router();
 
@@ -35,5 +39,9 @@ router.use("/journal", journalRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/users", userRoutes);
 router.use("/supports", supportRoutes);
+router.use("/reports", reportRoutes);
+router.use("/moderation", moderationRoutes);
+router.use("/friendships", friendshipRoutes);
+router.use("/admin", administrationRoutes);
 
 export default router;

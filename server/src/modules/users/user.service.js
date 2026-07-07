@@ -36,14 +36,30 @@ export async function getPublicProfile(currentUserId, targetUserId) {
 
   const isOwner = currentUserId === targetUserId;
 
-  if (
-    !isOwner &&
-    (user.isPrivate || user.visibility !== USER_VISIBILITIES.PUBLIC)
-  ) {
+  if (isOwner) {
+    return toPublicUserProfile(user);
+  }
+
+  if (user.isPrivate) {
     throw new AppError(USER_MESSAGES.PRIVATE_PROFILE, 403);
   }
 
-  return toPublicUserProfile(user);
+  if (user.visibility === USER_VISIBILITIES.PUBLIC) {
+    return toPublicUserProfile(user);
+  }
+
+  if (user.visibility === USER_VISIBILITIES.FRIENDS) {
+    const areFriends = await userRepository.areUsersFriends(
+      currentUserId,
+      targetUserId,
+    );
+
+    if (areFriends) {
+      return toPublicUserProfile(user);
+    }
+  }
+
+  throw new AppError(USER_MESSAGES.PRIVATE_PROFILE, 403);
 }
 
 export async function updateMyProfile(userId, input) {

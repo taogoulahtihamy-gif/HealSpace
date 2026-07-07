@@ -133,3 +133,29 @@ export async function deactivateUserAndRevokeSessions(userId) {
     });
   });
 }
+
+export async function areUsersFriends(
+  firstUserId,
+  secondUserId,
+) {
+  const [userOneId, userTwoId] = [
+    firstUserId,
+    secondUserId,
+  ].sort();
+
+  const friendship =
+    await prisma.friendship.findUnique({
+      where: {
+        userOneId_userTwoId: {
+          userOneId,
+          userTwoId,
+        },
+      },
+      select: {
+        status: true,
+      },
+    });
+
+  return friendship?.status === "ACCEPTED";
+}
+
