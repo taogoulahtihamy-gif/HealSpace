@@ -11,7 +11,10 @@ const conversationInclude = {
   },
 };
 
-export async function findDirectConversationBetweenUsers(userId, participantId) {
+export async function findDirectConversationBetweenUsers(
+  userId,
+  participantId,
+) {
   return prisma.conversation.findFirst({
     where: {
       type: "DIRECT",
@@ -69,7 +72,10 @@ export async function findConversationById(id) {
   });
 }
 
-export async function findConversationParticipant(conversationId, userId) {
+export async function findConversationParticipant(
+  conversationId,
+  userId,
+) {
   return prisma.conversationParticipant.findUnique({
     where: {
       conversationId_userId: {

@@ -1,39 +1,35 @@
 import { Router } from "express";
 import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { validate } from "../../middlewares/validation.middleware.js";
-import { createMediaSchema } from "./media.validator.js";
+import {
+  createMediaSchema,
+  uploadMediaSchema,
+} from "./media.validator.js";
 import {
   createMedia,
   deleteMedia,
   getMediaById,
   getUserMedia,
+  uploadMedia,
 } from "./media.controller.js";
+import { uploadSingleMedia } from "./media.upload.middleware.js";
 
 const router = Router();
 
+router.use(authMiddleware);
+
 router.post(
-  "/",
-  authMiddleware,
-  validate(createMediaSchema),
-  createMedia
+  "/upload",
+  uploadSingleMedia,
+  validate(uploadMediaSchema),
+  uploadMedia,
 );
 
-router.get(
-  "/",
-  authMiddleware,
-  getUserMedia
-);
+// Route historique conservée pour éviter une régression.
+router.post("/", validate(createMediaSchema), createMedia);
 
-router.get(
-  "/:id",
-  authMiddleware,
-  getMediaById
-);
-
-router.delete(
-  "/:id",
-  authMiddleware,
-  deleteMedia
-);
+router.get("/", getUserMedia);
+router.get("/:id", getMediaById);
+router.delete("/:id", deleteMedia);
 
 export default router;

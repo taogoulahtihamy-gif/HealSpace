@@ -20,14 +20,14 @@ router.post(
   "/conversations/:conversationId",
   authMiddleware,
   validate(createMessageSchema),
-  createMessage
+  createMessage,
 );
 
 // GET /api/messages/conversations/:conversationId
 router.get(
   "/conversations/:conversationId",
   authMiddleware,
-  getConversationMessages
+  getConversationMessages,
 );
 
 // PATCH /api/messages/:id
@@ -35,21 +35,13 @@ router.patch(
   "/:id",
   authMiddleware,
   validate(updateMessageSchema),
-  updateMessage
+  updateMessage,
 );
 
 // PATCH /api/messages/:id/read
-router.patch(
-  "/:id/read",
-  authMiddleware,
-  markMessageAsRead
-);
+router.patch("/:id/read", authMiddleware, markMessageAsRead);
 
 // DELETE /api/messages/:id
-router.delete(
-  "/:id",
-  authMiddleware,
-  deleteMessage
-);
+router.delete("/:id", authMiddleware, deleteMessage);
 
 export default router;

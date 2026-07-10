@@ -35,11 +35,7 @@ const basePaginationSchema = {
 export const listAdminUsersQuerySchema = z
   .object({
     ...basePaginationSchema,
-    search: z
-      .string()
-      .trim()
-      .max(ADMIN_LIMITS.SEARCH_MAX)
-      .optional(),
+    search: z.string().trim().max(ADMIN_LIMITS.SEARCH_MAX).optional(),
     role: z.enum(Object.values(ADMIN_USER_ROLES)).optional(),
     status: z.enum(Object.values(ADMIN_USER_STATUSES)).optional(),
   })
@@ -62,15 +58,9 @@ export const updateAdminUserStatusSchema = z
 export const listAdminPostsQuerySchema = z
   .object({
     ...basePaginationSchema,
-    search: z
-      .string()
-      .trim()
-      .max(ADMIN_LIMITS.SEARCH_MAX)
-      .optional(),
+    search: z.string().trim().max(ADMIN_LIMITS.SEARCH_MAX).optional(),
     status: z.enum(Object.values(ADMIN_POST_STATUSES)).optional(),
-    visibility: z
-      .enum(["PUBLIC", "GROUP", "PRIVATE"])
-      .optional(),
+    visibility: z.enum(["PUBLIC", "GROUP", "PRIVATE"]).optional(),
     authorId: z.string().trim().min(1).optional(),
   })
   .passthrough();
@@ -85,11 +75,7 @@ export const updateAdminPostStatusSchema = z
 export const listAdminGroupsQuerySchema = z
   .object({
     ...basePaginationSchema,
-    search: z
-      .string()
-      .trim()
-      .max(ADMIN_LIMITS.SEARCH_MAX)
-      .optional(),
+    search: z.string().trim().max(ADMIN_LIMITS.SEARCH_MAX).optional(),
     visibility: z.enum(["PUBLIC", "PRIVATE"]).optional(),
     ownerId: z.string().trim().min(1).optional(),
   })
@@ -99,21 +85,10 @@ export const listAdminReportsQuerySchema = z
   .object({
     ...basePaginationSchema,
     status: z
-      .enum([
-        "PENDING",
-        "UNDER_REVIEW",
-        "RESOLVED",
-        "REJECTED",
-      ])
+      .enum(["PENDING", "UNDER_REVIEW", "RESOLVED", "REJECTED"])
       .optional(),
     targetType: z
-      .enum([
-        "USER",
-        "POST",
-        "COMMENT",
-        "MESSAGE",
-        "GROUP",
-      ])
+      .enum(["USER", "POST", "COMMENT", "MESSAGE", "GROUP"])
       .optional(),
     reason: z
       .enum([

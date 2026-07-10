@@ -7,6 +7,7 @@ export function validate(schema) {
         success: false,
         message: "Validation failed",
         errors: result.error.flatten(),
+        requestId: req.id,
       });
     }
 

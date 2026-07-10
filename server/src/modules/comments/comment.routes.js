@@ -18,26 +18,22 @@ router.post(
   "/posts/:postId/comments",
   authMiddleware,
   validate(createCommentSchema),
-  createComment
+  createComment,
 );
 
 router.get(
   "/posts/:postId/comments",
   authMiddleware,
-  getCommentsByPost
+  getCommentsByPost,
 );
 
 router.patch(
   "/comments/:id",
   authMiddleware,
   validate(updateCommentSchema),
-  updateComment
+  updateComment,
 );
 
-router.delete(
-  "/comments/:id",
-  authMiddleware,
-  deleteComment
-);
+router.delete("/comments/:id", authMiddleware, deleteComment);
 
 export default router;

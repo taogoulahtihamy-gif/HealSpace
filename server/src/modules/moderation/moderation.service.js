@@ -14,15 +14,10 @@ import {
 } from "./moderation.constants.js";
 
 function assertModerator(actor) {
-  const allowedRoles = Object.values(
-    MODERATION_ALLOWED_ROLES,
-  );
+  const allowedRoles = Object.values(MODERATION_ALLOWED_ROLES);
 
   if (!actor || !allowedRoles.includes(actor.role)) {
-    throw new AppError(
-      MODERATION_MESSAGES.FORBIDDEN,
-      403,
-    );
+    throw new AppError(MODERATION_MESSAGES.FORBIDDEN, 403);
   }
 }
 
@@ -54,10 +49,7 @@ function normalizePagination(query = {}) {
       ? parsedLimit
       : MODERATION_LIMITS.DEFAULT_LIMIT;
 
-  const limit = Math.min(
-    requestedLimit,
-    MODERATION_LIMITS.MAX_LIMIT,
-  );
+  const limit = Math.min(requestedLimit, MODERATION_LIMITS.MAX_LIMIT);
 
   return {
     page,
@@ -80,28 +72,18 @@ function createPaginatedResult(items, total, page, limit) {
 
 async function getRequiredReport(reportId) {
   const report =
-    await moderationRepository.findModerationReportById(
-      reportId,
-    );
+    await moderationRepository.findModerationReportById(reportId);
 
   if (!report) {
-    throw new AppError(
-      MODERATION_MESSAGES.REPORT_NOT_FOUND,
-      404,
-    );
+    throw new AppError(MODERATION_MESSAGES.REPORT_NOT_FOUND, 404);
   }
 
   return report;
 }
 
 function ensureReportCanBeClosed(report, actor) {
-  if (
-    ["RESOLVED", "REJECTED"].includes(report.status)
-  ) {
-    throw new AppError(
-      MODERATION_MESSAGES.REPORT_ALREADY_CLOSED,
-      409,
-    );
+  if (["RESOLVED", "REJECTED"].includes(report.status)) {
+    throw new AppError(MODERATION_MESSAGES.REPORT_ALREADY_CLOSED, 409);
   }
 
   if (
@@ -119,13 +101,9 @@ function ensureReportCanBeClosed(report, actor) {
 export async function listReports(actor, query = {}) {
   assertModerator(actor);
 
-  const filters = parseOrThrow(
-    listModerationReportsQuerySchema,
-    query,
-  );
+  const filters = parseOrThrow(listModerationReportsQuerySchema, query);
 
-  const { page, limit, skip } =
-    normalizePagination(filters);
+  const { page, limit, skip } = normalizePagination(filters);
 
   const { items, total } =
     await moderationRepository.listModerationReports({
@@ -158,13 +136,8 @@ export async function startReview(actor, reportId) {
 
   const report = await getRequiredReport(reportId);
 
-  if (
-    ["RESOLVED", "REJECTED"].includes(report.status)
-  ) {
-    throw new AppError(
-      MODERATION_MESSAGES.REPORT_ALREADY_CLOSED,
-      409,
-    );
+  if (["RESOLVED", "REJECTED"].includes(report.status)) {
+    throw new AppError(MODERATION_MESSAGES.REPORT_ALREADY_CLOSED, 409);
   }
 
   if (report.status === "UNDER_REVIEW") {
@@ -181,11 +154,10 @@ export async function startReview(actor, reportId) {
     );
   }
 
-  const reviewedReport =
-    await moderationRepository.startReportReview({
-      reportId,
-      moderatorId: actor.id,
-    });
+  const reviewedReport = await moderationRepository.startReportReview({
+    reportId,
+    moderatorId: actor.id,
+  });
 
   if (!reviewedReport) {
     throw new AppError(
@@ -197,28 +169,22 @@ export async function startReview(actor, reportId) {
   return mapModerationReport(reviewedReport);
 }
 
-export async function resolveReport(
-  actor,
-  reportId,
-  resolutionNote,
-) {
+export async function resolveReport(actor, reportId, resolutionNote) {
   assertModerator(actor);
 
   const report = await getRequiredReport(reportId);
 
   ensureReportCanBeClosed(report, actor);
 
-  const resolvedReport =
-    await moderationRepository.closeReport({
-      reportId,
-      moderatorId: actor.id,
-      status: "RESOLVED",
-      resolutionNote,
-      action:
-        MODERATION_ACTION_TYPES.REPORT_RESOLVED,
-      allowReviewerOverride:
-        actor.role === MODERATION_ALLOWED_ROLES.ADMIN,
-    });
+  const resolvedReport = await moderationRepository.closeReport({
+    reportId,
+    moderatorId: actor.id,
+    status: "RESOLVED",
+    resolutionNote,
+    action: MODERATION_ACTION_TYPES.REPORT_RESOLVED,
+    allowReviewerOverride:
+      actor.role === MODERATION_ALLOWED_ROLES.ADMIN,
+  });
 
   if (!resolvedReport) {
     throw new AppError(
@@ -230,28 +196,22 @@ export async function resolveReport(
   return mapModerationReport(resolvedReport);
 }
 
-export async function rejectReport(
-  actor,
-  reportId,
-  resolutionNote,
-) {
+export async function rejectReport(actor, reportId, resolutionNote) {
   assertModerator(actor);
 
   const report = await getRequiredReport(reportId);
 
   ensureReportCanBeClosed(report, actor);
 
-  const rejectedReport =
-    await moderationRepository.closeReport({
-      reportId,
-      moderatorId: actor.id,
-      status: "REJECTED",
-      resolutionNote,
-      action:
-        MODERATION_ACTION_TYPES.REPORT_REJECTED,
-      allowReviewerOverride:
-        actor.role === MODERATION_ALLOWED_ROLES.ADMIN,
-    });
+  const rejectedReport = await moderationRepository.closeReport({
+    reportId,
+    moderatorId: actor.id,
+    status: "REJECTED",
+    resolutionNote,
+    action: MODERATION_ACTION_TYPES.REPORT_REJECTED,
+    allowReviewerOverride:
+      actor.role === MODERATION_ALLOWED_ROLES.ADMIN,
+  });
 
   if (!rejectedReport) {
     throw new AppError(
@@ -272,22 +232,14 @@ export async function updateUserStatus(
   assertModerator(actor);
 
   if (actor.id === targetUserId) {
-    throw new AppError(
-      MODERATION_MESSAGES.CANNOT_MODERATE_SELF,
-      400,
-    );
+    throw new AppError(MODERATION_MESSAGES.CANNOT_MODERATE_SELF, 400);
   }
 
   const targetUser =
-    await moderationRepository.findUserForModeration(
-      targetUserId,
-    );
+    await moderationRepository.findUserForModeration(targetUserId);
 
   if (!targetUser) {
-    throw new AppError(
-      MODERATION_MESSAGES.USER_NOT_FOUND,
-      404,
-    );
+    throw new AppError(MODERATION_MESSAGES.USER_NOT_FOUND, 404);
   }
 
   if (
@@ -303,14 +255,13 @@ export async function updateUserStatus(
     );
   }
 
-  const updatedUser =
-    await moderationRepository.updateUserStatus({
-      moderatorId: actor.id,
-      targetUserId,
-      status,
-      note,
-      previousStatus: targetUser.status,
-    });
+  const updatedUser = await moderationRepository.updateUserStatus({
+    moderatorId: actor.id,
+    targetUserId,
+    status,
+    note,
+    previousStatus: targetUser.status,
+  });
 
   return mapModeratedUser(updatedUser);
 }

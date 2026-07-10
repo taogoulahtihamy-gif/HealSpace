@@ -28,10 +28,7 @@ export async function createReport(data) {
   });
 }
 
-export async function findReportByIdForReporter(
-  reportId,
-  reporterId,
-) {
+export async function findReportByIdForReporter(reportId, reporterId) {
   return prisma.report.findFirst({
     where: {
       id: reportId,
@@ -137,10 +134,7 @@ export async function findReportableCommentById(commentId) {
   });
 }
 
-export async function findReportableMessageById(
-  messageId,
-  reporterId,
-) {
+export async function findReportableMessageById(messageId, reporterId) {
   return prisma.message.findFirst({
     where: {
       id: messageId,
@@ -163,10 +157,7 @@ export async function findReportableMessageById(
   });
 }
 
-export async function findReportableGroupById(
-  groupId,
-  reporterId,
-) {
+export async function findReportableGroupById(groupId, reporterId) {
   return prisma.group.findFirst({
     where: {
       id: groupId,

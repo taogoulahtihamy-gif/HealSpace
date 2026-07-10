@@ -6,10 +6,7 @@ import {
   updatePost,
   softDeletePost,
 } from "./post.repository.js";
-import {
-  toPostResponse,
-  toPostListResponse,
-} from "./post.mapper.js";
+import { toPostResponse, toPostListResponse } from "./post.mapper.js";
 import { POST_MESSAGES } from "./post.constants.js";
 
 export async function createPostService(userId, payload) {

@@ -12,21 +12,11 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.post(
-  "/",
-  validate(createReportSchema),
-  createReport,
-);
+router.post("/", validate(createReportSchema), createReport);
 
 // Cette route statique doit rester avant "/:reportId".
-router.get(
-  "/mine",
-  listMyReports,
-);
+router.get("/mine", listMyReports);
 
-router.get(
-  "/:reportId",
-  getMyReportById,
-);
+router.get("/:reportId", getMyReportById);
 
 export default router;

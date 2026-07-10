@@ -100,11 +100,20 @@ enum GroupMemberRole {
   MEMBER
 }
 
+enum GroupInvitationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
 enum NotificationType {
   REACTION
   COMMENT
   MESSAGE
   GROUP_INVITATION
+  GROUP_INVITATION_ACCEPTED
   GROUP_JOIN
   SYSTEM
   SUPPORT_ACCEPTED
@@ -197,12 +206,13 @@ model User {
   visibility  Visibility @default(PUBLIC)
   currentMood MoodType?
 
-  isVerified    Boolean   @default(false)
-  emailVerified Boolean   @default(false)
-  phoneVerified Boolean   @default(false)
-  isPrivate     Boolean   @default(false)
-  allowAI       Boolean   @default(true)
-  lastLogin     DateTime?
+  isVerified      Boolean   @default(false)
+  emailVerified   Boolean   @default(false)
+  emailVerifiedAt DateTime?
+  phoneVerified   Boolean   @default(false)
+  isPrivate       Boolean   @default(false)
+  allowAI         Boolean   @default(true)
+  lastLogin       DateTime?
 
   posts     Post[]
   comments  Comment[]
@@ -221,10 +231,15 @@ model User {
   groups       Group[]       @relation("GroupOwner")
   groupMembers GroupMember[] @relation("GroupMemberUser")
 
+  sentGroupInvitations     GroupInvitation[] @relation("GroupInvitationInviter")
+  receivedGroupInvitations GroupInvitation[] @relation("GroupInvitationInvitee")
+
   supportRequests  SupportRequest[] @relation("SupportRequester")
   providedSupports SupportRequest[] @relation("SupportProvider")
 
-  refreshTokens RefreshToken[]
+  refreshTokens           RefreshToken[]
+  passwordResetTokens     PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
 
   conversationParticipants ConversationParticipant[]
   sentMessages             Message[]
@@ -251,8 +266,9 @@ model Group {
   visibility  GroupVisibility @default(PUBLIC)
   ownerId     String
 
-  owner   User          @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  members GroupMember[]
+  owner       User              @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members     GroupMember[]
+  invitations GroupInvitation[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -277,21 +293,110 @@ model GroupMember {
   @@index([groupId, role])
 }
 
+model GroupInvitation {
+  id String @id @default(cuid())
+
+  groupId String
+  group   Group  @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  inviterId String
+  inviter   User   @relation("GroupInvitationInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+
+  inviteeId String
+  invitee   User   @relation("GroupInvitationInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+
+  status    GroupInvitationStatus @default(PENDING)
+  activeKey String?               @unique
+  expiresAt DateTime
+
+  respondedAt DateTime?
+  cancelledAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([groupId, status])
+  @@index([inviteeId, status, createdAt])
+  @@index([inviterId, createdAt])
+  @@index([expiresAt])
+  @@map("group_invitations")
+}
+
 //////////////////////////////////////////////////////
 // REFRESH TOKEN
 //////////////////////////////////////////////////////
 
 model RefreshToken {
-  id        String    @id @default(cuid())
-  token     String    @unique
-  userId    String
+  id String @id @default(cuid())
+
+  // Le champ Prisma s'appelle tokenHash, mais la colonne PostgreSQL
+  // existante reste "token" afin d'éviter de déplacer les secrets déjà hachés.
+  tokenHash String @unique @map("token")
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  familyId String
+  deviceId String?
+
+  userAgent String?
+  ipAddress String?
+
+  expiresAt  DateTime
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+
+  revokedReason     String?
+  replacedByTokenId String?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, revokedAt])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+//////////////////////////////////////////////////////
+// PASSWORD RESET TOKEN
+//////////////////////////////////////////////////////
+
+model PasswordResetToken {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String    @unique
   expiresAt DateTime
-  revokedAt DateTime?
+  usedAt    DateTime?
   createdAt DateTime  @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@index([userId, usedAt])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
 
-  @@map("refresh_tokens")
+//////////////////////////////////////////////////////
+// EMAIL VERIFICATION TOKEN
+//////////////////////////////////////////////////////
+
+model EmailVerificationToken {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([userId, usedAt])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
 }
 
 //////////////////////////////////////////////////////

@@ -37,7 +37,8 @@ export const REPORT_MESSAGES = Object.freeze({
   RETRIEVED: "Signalement récupéré avec succès.",
 
   NOT_FOUND: "Signalement introuvable.",
-  TARGET_NOT_FOUND: "Le contenu à signaler est introuvable ou inaccessible.",
+  TARGET_NOT_FOUND:
+    "Le contenu à signaler est introuvable ou inaccessible.",
   SELF_REPORT_FORBIDDEN:
     "Vous ne pouvez pas signaler votre propre compte.",
   DUPLICATE_ACTIVE_REPORT:

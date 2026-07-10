@@ -30,5 +30,6 @@ export const JOURNAL_MESSAGES = Object.freeze({
   NOT_FOUND: "Entrée de journal introuvable.",
   INVALID_MOOD: "L'humeur fournie est invalide.",
   INVALID_DATE: "La date fournie est invalide.",
-  INVALID_DATE_RANGE: "La date de début doit être antérieure ou égale à la date de fin.",
+  INVALID_DATE_RANGE:
+    "La date de début doit être antérieure ou égale à la date de fin.",
 });

@@ -1,5 +1,7 @@
 function toConversationUser(user) {
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
   return {
     id: user.id,
@@ -24,7 +26,8 @@ export function toConversationResponse(conversation) {
     id: conversation.id,
     type: conversation.type,
     title: conversation.title,
-    participants: conversation.participants?.map(toConversationParticipant) || [],
+    participants:
+      conversation.participants?.map(toConversationParticipant) || [],
     createdAt: conversation.createdAt,
     updatedAt: conversation.updatedAt,
   };

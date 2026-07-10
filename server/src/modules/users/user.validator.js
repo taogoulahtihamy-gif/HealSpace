@@ -100,8 +100,14 @@ export const updateProfileSchema = z
       .min(2, "La langue est invalide.")
       .max(USER_LIMITS.LANGUAGE_MAX)
       .optional(),
-    timezone: trimmedOptionalString(USER_LIMITS.TIMEZONE_MAX, "Le fuseau horaire"),
-    currentMood: z.enum(Object.values(USER_MOODS)).nullable().optional(),
+    timezone: trimmedOptionalString(
+      USER_LIMITS.TIMEZONE_MAX,
+      "Le fuseau horaire",
+    ),
+    currentMood: z
+      .enum(Object.values(USER_MOODS))
+      .nullable()
+      .optional(),
   })
   .strict()
   .refine((data) => Object.keys(data).length > 0, {
@@ -138,5 +144,30 @@ export const changePasswordSchema = z
 export const deactivateAccountSchema = z
   .object({
     password: passwordSchema,
+  })
+  .strict();
+
+const positiveIntegerQuerySchema = z
+  .string()
+  .trim()
+  .regex(/^[1-9]\d*$/, {
+    message: "La valeur doit être un entier strictement positif.",
+  });
+
+export const searchUsersQuerySchema = z
+  .object({
+    q: z
+      .string()
+      .trim()
+      .min(
+        USER_LIMITS.SEARCH_MIN,
+        `La recherche doit contenir au moins ${USER_LIMITS.SEARCH_MIN} caractères.`,
+      )
+      .max(
+        USER_LIMITS.SEARCH_MAX,
+        `La recherche ne doit pas dépasser ${USER_LIMITS.SEARCH_MAX} caractères.`,
+      ),
+    page: positiveIntegerQuerySchema.optional(),
+    limit: positiveIntegerQuerySchema.optional(),
   })
   .strict();

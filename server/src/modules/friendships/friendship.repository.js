@@ -37,10 +37,7 @@ export async function findActiveUserById(userId) {
   });
 }
 
-export async function findFriendshipBetweenUsers(
-  userOneId,
-  userTwoId,
-) {
+export async function findFriendshipBetweenUsers(userOneId, userTwoId) {
   return prisma.friendship.findUnique({
     where: {
       userOneId_userTwoId: {
@@ -95,20 +92,13 @@ export async function reopenFriendshipRequest({
   });
 }
 
-export async function listIncomingRequests({
-  userId,
-  skip,
-  take,
-}) {
+export async function listIncomingRequests({ userId, skip, take }) {
   const where = {
     status: "PENDING",
     requestedById: {
       not: userId,
     },
-    OR: [
-      { userOneId: userId },
-      { userTwoId: userId },
-    ],
+    OR: [{ userOneId: userId }, { userTwoId: userId }],
   };
 
   const [items, total] = await prisma.$transaction([
@@ -129,11 +119,7 @@ export async function listIncomingRequests({
   return { items, total };
 }
 
-export async function listOutgoingRequests({
-  userId,
-  skip,
-  take,
-}) {
+export async function listOutgoingRequests({ userId, skip, take }) {
   const where = {
     status: "PENDING",
     requestedById: userId,
@@ -157,17 +143,10 @@ export async function listOutgoingRequests({
   return { items, total };
 }
 
-export async function listAcceptedFriendships({
-  userId,
-  skip,
-  take,
-}) {
+export async function listAcceptedFriendships({ userId, skip, take }) {
   const where = {
     status: "ACCEPTED",
-    OR: [
-      { userOneId: userId },
-      { userTwoId: userId },
-    ],
+    OR: [{ userOneId: userId }, { userTwoId: userId }],
   };
 
   const [items, total] = await prisma.$transaction([
@@ -199,10 +178,7 @@ export async function acceptFriendshipRequest({
       requestedById: {
         not: recipientId,
       },
-      OR: [
-        { userOneId: recipientId },
-        { userTwoId: recipientId },
-      ],
+      OR: [{ userOneId: recipientId }, { userTwoId: recipientId }],
     },
     data: {
       status: "ACCEPTED",
@@ -228,10 +204,7 @@ export async function rejectFriendshipRequest({
       requestedById: {
         not: recipientId,
       },
-      OR: [
-        { userOneId: recipientId },
-        { userTwoId: recipientId },
-      ],
+      OR: [{ userOneId: recipientId }, { userTwoId: recipientId }],
     },
     data: {
       status: "REJECTED",
@@ -267,35 +240,25 @@ export async function removeAcceptedFriendship({
     where: {
       id: friendshipId,
       status: "ACCEPTED",
-      OR: [
-        { userOneId: userId },
-        { userTwoId: userId },
-      ],
+      OR: [{ userOneId: userId }, { userTwoId: userId }],
     },
   });
 }
 
-export async function areUsersFriends(
-  firstUserId,
-  secondUserId,
-) {
-  const [userOneId, userTwoId] = [
-    firstUserId,
-    secondUserId,
-  ].sort();
+export async function areUsersFriends(firstUserId, secondUserId) {
+  const [userOneId, userTwoId] = [firstUserId, secondUserId].sort();
 
-  const friendship =
-    await prisma.friendship.findUnique({
-      where: {
-        userOneId_userTwoId: {
-          userOneId,
-          userTwoId,
-        },
+  const friendship = await prisma.friendship.findUnique({
+    where: {
+      userOneId_userTwoId: {
+        userOneId,
+        userTwoId,
       },
-      select: {
-        status: true,
-      },
-    });
+    },
+    select: {
+      status: true,
+    },
+  });
 
   return friendship?.status === "ACCEPTED";
 }

@@ -18,18 +18,9 @@ router.use(authMiddleware);
 router.post("/requests/:userId", sendFriendRequest);
 router.get("/requests/incoming", listIncomingRequests);
 router.get("/requests/outgoing", listOutgoingRequests);
-router.patch(
-  "/requests/:friendshipId/accept",
-  acceptFriendRequest,
-);
-router.patch(
-  "/requests/:friendshipId/reject",
-  rejectFriendRequest,
-);
-router.delete(
-  "/requests/:friendshipId",
-  cancelFriendRequest,
-);
+router.patch("/requests/:friendshipId/accept", acceptFriendRequest);
+router.patch("/requests/:friendshipId/reject", rejectFriendRequest);
+router.delete("/requests/:friendshipId", cancelFriendRequest);
 
 router.get("/", listFriends);
 router.delete("/:friendshipId", removeFriendship);

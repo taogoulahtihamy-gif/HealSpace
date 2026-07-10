@@ -1,7 +1,13 @@
 import { AppError } from "../../../core/errors/AppError.js";
 
-import { createNotification } from
-  "../notifications/notification.service.js";
+import { createNotification } from "../notifications/notification.service.js";
+
+import {
+  publishMessageCreated,
+  publishMessageDeleted,
+  publishMessageRead,
+  publishMessageUpdated,
+} from "../../sockets/socket.publisher.js";
 
 import {
   createMessage,
@@ -28,41 +34,29 @@ async function ensureConversationExistsAndUserIsParticipant(
   conversationId,
   userId,
 ) {
-  const conversation =
-    await findConversationById(conversationId);
+  const conversation = await findConversationById(conversationId);
 
   if (!conversation || conversation.deletedAt) {
-    throw new AppError(
-      MESSAGE_MESSAGES.CONVERSATION_NOT_FOUND,
-      404,
-    );
+    throw new AppError(MESSAGE_MESSAGES.CONVERSATION_NOT_FOUND, 404);
   }
 
-  const participant =
-    await findConversationParticipant(
-      conversationId,
-      userId,
-    );
+  const participant = await findConversationParticipant(
+    conversationId,
+    userId,
+  );
 
   if (!participant) {
-    throw new AppError(
-      MESSAGE_MESSAGES.NOT_PARTICIPANT,
-      403,
-    );
+    throw new AppError(MESSAGE_MESSAGES.NOT_PARTICIPANT, 403);
   }
 
   return conversation;
 }
 
-function getActiveRecipientIds(
-  conversation,
-  senderId,
-) {
+function getActiveRecipientIds(conversation, senderId) {
   return conversation.participants
     .filter(
       (participant) =>
-        participant.userId !== senderId &&
-        participant.leftAt === null,
+        participant.userId !== senderId && participant.leftAt === null,
     )
     .map((participant) => participant.userId);
 }
@@ -72,10 +66,7 @@ async function notifyConversationParticipants({
   message,
   senderId,
 }) {
-  const recipientIds = getActiveRecipientIds(
-    conversation,
-    senderId,
-  );
+  const recipientIds = getActiveRecipientIds(conversation, senderId);
 
   await Promise.all(
     recipientIds.map((recipientId) =>
@@ -112,13 +103,17 @@ export async function createMessageService(
     content: payload.content,
   });
 
+  const response = toMessageResponse(message);
+
+  publishMessageCreated(conversationId, response);
+
   await notifyConversationParticipants({
     conversation,
     message,
     senderId: userId,
   });
 
-  return toMessageResponse(message);
+  return response;
 }
 
 export async function getConversationMessagesService(
@@ -130,81 +125,61 @@ export async function getConversationMessagesService(
     userId,
   );
 
-  const messages =
-    await findMessagesByConversationId(
-      conversationId,
-    );
+  const messages = await findMessagesByConversationId(conversationId);
 
   return toMessageListResponse(messages);
 }
 
-export async function updateMessageService(
-  userId,
-  messageId,
-  payload,
-) {
+export async function updateMessageService(userId, messageId, payload) {
   const message = await findMessageById(messageId);
 
   if (!message || message.deletedAt) {
-    throw new AppError(
-      MESSAGE_MESSAGES.MESSAGE_NOT_FOUND,
-      404,
-    );
+    throw new AppError(MESSAGE_MESSAGES.MESSAGE_NOT_FOUND, 404);
   }
 
   if (message.senderId !== userId) {
-    throw new AppError(
-      MESSAGE_MESSAGES.FORBIDDEN,
-      403,
-    );
+    throw new AppError(MESSAGE_MESSAGES.FORBIDDEN, 403);
   }
 
-  const updatedMessage = await updateMessage(
-    messageId,
-    {
-      content: payload.content,
-    },
-  );
+  const updatedMessage = await updateMessage(messageId, {
+    content: payload.content,
+  });
 
-  return toMessageResponse(updatedMessage);
+  const response = toMessageResponse(updatedMessage);
+
+  publishMessageUpdated(message.conversationId, response);
+
+  return response;
 }
 
-export async function deleteMessageService(
-  userId,
-  messageId,
-) {
+export async function deleteMessageService(userId, messageId) {
   const message = await findMessageById(messageId);
 
   if (!message || message.deletedAt) {
-    throw new AppError(
-      MESSAGE_MESSAGES.MESSAGE_NOT_FOUND,
-      404,
-    );
+    throw new AppError(MESSAGE_MESSAGES.MESSAGE_NOT_FOUND, 404);
   }
 
   if (message.senderId !== userId) {
-    throw new AppError(
-      MESSAGE_MESSAGES.FORBIDDEN,
-      403,
-    );
+    throw new AppError(MESSAGE_MESSAGES.FORBIDDEN, 403);
   }
 
-  await softDeleteMessage(messageId);
+  const deletedMessage = await softDeleteMessage(messageId);
+
+  publishMessageDeleted(message.conversationId, {
+    messageId: deletedMessage.id,
+    conversationId: deletedMessage.conversationId,
+    deletedAt: deletedMessage.deletedAt,
+    senderId: deletedMessage.senderId,
+  });
 
   return null;
 }
 
-export async function markMessageAsReadService(
-  userId,
-  messageId,
-) {
+export async function markMessageAsReadService(userId, messageId) {
   const message = await findMessageById(messageId);
 
   if (!message || message.deletedAt) {
-    throw new AppError(
-      MESSAGE_MESSAGES.MESSAGE_NOT_FOUND,
-      404,
-    );
+    throw new AppError(MESSAGE_MESSAGES.MESSAGE_NOT_FOUND, 404);
   }
 
   await ensureConversationExistsAndUserIsParticipant(
@@ -212,8 +187,15 @@ export async function markMessageAsReadService(
     userId,
   );
 
-  const updatedMessage =
-    await markMessageAsRead(messageId);
+  const updatedMessage = await markMessageAsRead(messageId);
 
-  return toMessageResponse(updatedMessage);
+  const response = toMessageResponse(updatedMessage);
+
+  publishMessageRead(message.conversationId, {
+    conversationId: message.conversationId,
+    message: response,
+    readById: userId,
+  });
+
+  return response;
 }

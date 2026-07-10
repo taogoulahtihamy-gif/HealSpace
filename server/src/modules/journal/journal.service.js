@@ -4,20 +4,25 @@ import {
   JOURNAL_MESSAGES,
   JOURNAL_MOODS,
 } from "./journal.constants.js";
-import { mapJournalEntry, mapJournalSummary } from "./journal.mapper.js";
+import {
+  mapJournalEntry,
+  mapJournalSummary,
+} from "./journal.mapper.js";
 import * as journalRepository from "./journal.repository.js";
 
 function normalizePagination(query = {}) {
   const parsedPage = Number.parseInt(query.page, 10);
   const parsedLimit = Number.parseInt(query.limit, 10);
 
-  const page = Number.isInteger(parsedPage) && parsedPage > 0
-    ? parsedPage
-    : JOURNAL_LIMITS.DEFAULT_PAGE;
+  const page =
+    Number.isInteger(parsedPage) && parsedPage > 0
+      ? parsedPage
+      : JOURNAL_LIMITS.DEFAULT_PAGE;
 
-  const requestedLimit = Number.isInteger(parsedLimit) && parsedLimit > 0
-    ? parsedLimit
-    : JOURNAL_LIMITS.DEFAULT_LIMIT;
+  const requestedLimit =
+    Number.isInteger(parsedLimit) && parsedLimit > 0
+      ? parsedLimit
+      : JOURNAL_LIMITS.DEFAULT_LIMIT;
 
   const limit = Math.min(requestedLimit, JOURNAL_LIMITS.MAX_LIMIT);
 
@@ -80,7 +85,10 @@ function normalizeDateRange(query = {}) {
 }
 
 async function getRequiredJournalEntry(entryId, userId) {
-  const entry = await journalRepository.findJournalEntryById(entryId, userId);
+  const entry = await journalRepository.findJournalEntryById(
+    entryId,
+    userId,
+  );
 
   if (!entry) {
     throw new AppError(JOURNAL_MESSAGES.NOT_FOUND, 404);
@@ -162,11 +170,12 @@ export async function deleteJournalEntry(userId, entryId) {
 
 export async function getJournalSummary(userId, query = {}) {
   const { from, to } = normalizeDateRange(query);
-  const { moodGroups, totals } = await journalRepository.getJournalSummary({
-    userId,
-    from,
-    to,
-  });
+  const { moodGroups, totals } =
+    await journalRepository.getJournalSummary({
+      userId,
+      from,
+      to,
+    });
 
   const moods = moodGroups
     .map((group) => ({

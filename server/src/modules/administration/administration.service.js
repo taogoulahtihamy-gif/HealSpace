@@ -25,10 +25,7 @@ import {
 
 function assertAdministrator(actor) {
   if (!actor || actor.role !== ADMIN_ALLOWED_ROLE) {
-    throw new AppError(
-      ADMIN_MESSAGES.FORBIDDEN,
-      403,
-    );
+    throw new AppError(ADMIN_MESSAGES.FORBIDDEN, 403);
   }
 }
 
@@ -60,10 +57,7 @@ function normalizePagination(query = {}) {
       ? parsedLimit
       : ADMIN_LIMITS.DEFAULT_LIMIT;
 
-  const limit = Math.min(
-    requestedLimit,
-    ADMIN_LIMITS.MAX_LIMIT,
-  );
+  const limit = Math.min(requestedLimit, ADMIN_LIMITS.MAX_LIMIT);
 
   return {
     page,
@@ -72,12 +66,7 @@ function normalizePagination(query = {}) {
   };
 }
 
-function createPaginatedResult(
-  items,
-  total,
-  page,
-  limit,
-) {
+function createPaginatedResult(items, total, page, limit) {
   return {
     items,
     pagination: {
@@ -90,39 +79,25 @@ function createPaginatedResult(
 }
 
 async function getRequiredUser(userId) {
-  const user =
-    await administrationRepository.findAdminUserById(
-      userId,
-    );
+  const user = await administrationRepository.findAdminUserById(userId);
 
   if (!user) {
-    throw new AppError(
-      ADMIN_MESSAGES.USER_NOT_FOUND,
-      404,
-    );
+    throw new AppError(ADMIN_MESSAGES.USER_NOT_FOUND, 404);
   }
 
   return user;
 }
 
 async function ensureAnotherActiveAdminRemains(user) {
-  if (
-    user.role !== "ADMIN" ||
-    user.status !== "ACTIVE"
-  ) {
+  if (user.role !== "ADMIN" || user.status !== "ACTIVE") {
     return;
   }
 
   const otherActiveAdmins =
-    await administrationRepository.countOtherActiveAdmins(
-      user.id,
-    );
+    await administrationRepository.countOtherActiveAdmins(user.id);
 
   if (otherActiveAdmins === 0) {
-    throw new AppError(
-      ADMIN_MESSAGES.LAST_ACTIVE_ADMIN,
-      409,
-    );
+    throw new AppError(ADMIN_MESSAGES.LAST_ACTIVE_ADMIN, 409);
   }
 }
 
@@ -135,13 +110,9 @@ export async function getStatistics(actor) {
 export async function listUsers(actor, query = {}) {
   assertAdministrator(actor);
 
-  const filters = parseOrThrow(
-    listAdminUsersQuerySchema,
-    query,
-  );
+  const filters = parseOrThrow(listAdminUsersQuerySchema, query);
 
-  const { page, limit, skip } =
-    normalizePagination(filters);
+  const { page, limit, skip } = normalizePagination(filters);
 
   const { items, total } =
     await administrationRepository.listAdminUsers({
@@ -168,19 +139,11 @@ export async function getUser(actor, userId) {
   return mapAdminUser(user);
 }
 
-export async function updateUserRole(
-  actor,
-  userId,
-  role,
-  note,
-) {
+export async function updateUserRole(actor, userId, role, note) {
   assertAdministrator(actor);
 
   if (actor.id === userId) {
-    throw new AppError(
-      ADMIN_MESSAGES.CANNOT_MODIFY_SELF,
-      400,
-    );
+    throw new AppError(ADMIN_MESSAGES.CANNOT_MODIFY_SELF, 400);
   }
 
   const user = await getRequiredUser(userId);
@@ -205,19 +168,11 @@ export async function updateUserRole(
   return mapAdminUser(updatedUser);
 }
 
-export async function updateUserStatus(
-  actor,
-  userId,
-  status,
-  note,
-) {
+export async function updateUserStatus(actor, userId, status, note) {
   assertAdministrator(actor);
 
   if (actor.id === userId) {
-    throw new AppError(
-      ADMIN_MESSAGES.CANNOT_MODIFY_SELF,
-      400,
-    );
+    throw new AppError(ADMIN_MESSAGES.CANNOT_MODIFY_SELF, 400);
   }
 
   const user = await getRequiredUser(userId);
@@ -249,13 +204,9 @@ export async function updateUserStatus(
 export async function listPosts(actor, query = {}) {
   assertAdministrator(actor);
 
-  const filters = parseOrThrow(
-    listAdminPostsQuerySchema,
-    query,
-  );
+  const filters = parseOrThrow(listAdminPostsQuerySchema, query);
 
-  const { page, limit, skip } =
-    normalizePagination(filters);
+  const { page, limit, skip } = normalizePagination(filters);
 
   const { items, total } =
     await administrationRepository.listAdminPosts({
@@ -275,24 +226,13 @@ export async function listPosts(actor, query = {}) {
   );
 }
 
-export async function updatePostStatus(
-  actor,
-  postId,
-  status,
-  note,
-) {
+export async function updatePostStatus(actor, postId, status, note) {
   assertAdministrator(actor);
 
-  const post =
-    await administrationRepository.findAdminPostById(
-      postId,
-    );
+  const post = await administrationRepository.findAdminPostById(postId);
 
   if (!post) {
-    throw new AppError(
-      ADMIN_MESSAGES.POST_NOT_FOUND,
-      404,
-    );
+    throw new AppError(ADMIN_MESSAGES.POST_NOT_FOUND, 404);
   }
 
   if (post.status === status) {
@@ -314,13 +254,9 @@ export async function updatePostStatus(
 export async function listGroups(actor, query = {}) {
   assertAdministrator(actor);
 
-  const filters = parseOrThrow(
-    listAdminGroupsQuerySchema,
-    query,
-  );
+  const filters = parseOrThrow(listAdminGroupsQuerySchema, query);
 
-  const { page, limit, skip } =
-    normalizePagination(filters);
+  const { page, limit, skip } = normalizePagination(filters);
 
   const { items, total } =
     await administrationRepository.listAdminGroups({
@@ -339,46 +275,30 @@ export async function listGroups(actor, query = {}) {
   );
 }
 
-export async function deleteGroup(
-  actor,
-  groupId,
-) {
+export async function deleteGroup(actor, groupId) {
   assertAdministrator(actor);
 
   const group =
-    await administrationRepository.findAdminGroupById(
-      groupId,
-    );
+    await administrationRepository.findAdminGroupById(groupId);
 
   if (!group) {
-    throw new AppError(
-      ADMIN_MESSAGES.GROUP_NOT_FOUND,
-      404,
-    );
+    throw new AppError(ADMIN_MESSAGES.GROUP_NOT_FOUND, 404);
   }
 
-  const deletedGroup =
-    await administrationRepository.deleteAdminGroup({
-      administratorId: actor.id,
-      group,
-    });
+  const deletedGroup = await administrationRepository.deleteAdminGroup({
+    administratorId: actor.id,
+    group,
+  });
 
   return mapAdminGroup(deletedGroup);
 }
 
-export async function listReports(
-  actor,
-  query = {},
-) {
+export async function listReports(actor, query = {}) {
   assertAdministrator(actor);
 
-  const filters = parseOrThrow(
-    listAdminReportsQuerySchema,
-    query,
-  );
+  const filters = parseOrThrow(listAdminReportsQuerySchema, query);
 
-  const { page, limit, skip } =
-    normalizePagination(filters);
+  const { page, limit, skip } = normalizePagination(filters);
 
   const { items, total } =
     await administrationRepository.listAdminReports({
@@ -399,19 +319,12 @@ export async function listReports(
   );
 }
 
-export async function listActions(
-  actor,
-  query = {},
-) {
+export async function listActions(actor, query = {}) {
   assertAdministrator(actor);
 
-  const filters = parseOrThrow(
-    listAdminActionsQuerySchema,
-    query,
-  );
+  const filters = parseOrThrow(listAdminActionsQuerySchema, query);
 
-  const { page, limit, skip } =
-    normalizePagination(filters);
+  const { page, limit, skip } = normalizePagination(filters);
 
   const { items, total } =
     await administrationRepository.listAdminActions({

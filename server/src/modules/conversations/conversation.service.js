@@ -16,7 +16,7 @@ import { CONVERSATION_MESSAGES } from "./conversation.constants.js";
 
 function ensureParticipant(conversation, userId) {
   const isParticipant = conversation.participants?.some(
-    (participant) => participant.user?.id === userId
+    (participant) => participant.user?.id === userId,
   );
 
   if (!isParticipant) {
@@ -26,7 +26,10 @@ function ensureParticipant(conversation, userId) {
 
 export async function createDirectConversationService(userId, payload) {
   if (userId === payload.participantId) {
-    throw new AppError(CONVERSATION_MESSAGES.SELF_CONVERSATION_FORBIDDEN, 400);
+    throw new AppError(
+      CONVERSATION_MESSAGES.SELF_CONVERSATION_FORBIDDEN,
+      400,
+    );
   }
 
   const participant = await findUserById(payload.participantId);
@@ -37,7 +40,7 @@ export async function createDirectConversationService(userId, payload) {
 
   const existingConversation = await findDirectConversationBetweenUsers(
     userId,
-    payload.participantId
+    payload.participantId,
   );
 
   if (existingConversation) {
@@ -47,10 +50,7 @@ export async function createDirectConversationService(userId, payload) {
   const conversation = await createConversation({
     type: "DIRECT",
     participants: {
-      create: [
-        { userId },
-        { userId: payload.participantId },
-      ],
+      create: [{ userId }, { userId: payload.participantId }],
     },
   });
 
@@ -58,9 +58,13 @@ export async function createDirectConversationService(userId, payload) {
 }
 
 export async function createGroupConversationService(userId, payload) {
-  const participantIds = [...new Set([userId, ...payload.participantIds])];
+  const participantIds = [
+    ...new Set([userId, ...payload.participantIds]),
+  ];
 
-  const users = await Promise.all(participantIds.map((id) => findUserById(id)));
+  const users = await Promise.all(
+    participantIds.map((id) => findUserById(id)),
+  );
 
   if (users.some((user) => !user)) {
     throw new AppError(CONVERSATION_MESSAGES.USER_NOT_FOUND, 404);
@@ -85,7 +89,10 @@ export async function getConversationsService(userId) {
   return toConversationListResponse(conversations);
 }
 
-export async function getConversationByIdService(userId, conversationId) {
+export async function getConversationByIdService(
+  userId,
+  conversationId,
+) {
   const conversation = await findConversationById(conversationId);
 
   if (!conversation || conversation.deletedAt) {
@@ -104,7 +111,10 @@ export async function leaveConversationService(userId, conversationId) {
     throw new AppError(CONVERSATION_MESSAGES.NOT_FOUND, 404);
   }
 
-  const participant = await findConversationParticipant(conversationId, userId);
+  const participant = await findConversationParticipant(
+    conversationId,
+    userId,
+  );
 
   if (!participant || participant.leftAt) {
     throw new AppError(CONVERSATION_MESSAGES.FORBIDDEN, 403);

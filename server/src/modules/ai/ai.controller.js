@@ -13,7 +13,14 @@ export const analyzeMood = asyncHandler(async (req, res) => {
 });
 
 export const generateSupportMessage = asyncHandler(async (req, res) => {
-  const result = await generateSupportMessageService(req.user.id, req.body);
+  const result = await generateSupportMessageService(
+    req.user.id,
+    req.body,
+  );
 
-  return ApiResponse.success(res, result, AI_MESSAGES.SUPPORT_GENERATED);
+  return ApiResponse.success(
+    res,
+    result,
+    AI_MESSAGES.SUPPORT_GENERATED,
+  );
 });

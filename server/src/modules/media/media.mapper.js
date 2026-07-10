@@ -1,15 +1,23 @@
 export function toMediaResponse(media) {
+  if (!media) {
+    return null;
+  }
+
   return {
     id: media.id,
-    filename: media.filename,
-    originalName: media.originalName,
-    mimeType: media.mimeType,
-    size: media.size,
-    url: media.url,
     ownerId: media.ownerId,
     postId: media.postId,
-    conversationId: media.conversationId,
+    publicId: media.publicId,
+    type: media.type,
+    url: media.url,
+    mimeType: media.mimeType,
+    size: media.size,
     createdAt: media.createdAt,
+
+    // Compatibilité temporaire avec l'ancienne réponse.
+    filename: media.publicId,
+    originalName: null,
+    conversationId: null,
   };
 }
 

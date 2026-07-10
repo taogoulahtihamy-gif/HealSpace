@@ -1,6 +1,5 @@
 import { AppError } from "../../../core/errors/AppError.js";
-import { createNotification } from
-  "../notifications/notification.service.js";
+import { createNotification } from "../notifications/notification.service.js";
 import {
   mapFriendship,
   mapFriendshipList,
@@ -46,10 +45,7 @@ function normalizePagination(query = {}) {
       ? parsedLimit
       : FRIENDSHIP_LIMITS.DEFAULT_LIMIT;
 
-  const limit = Math.min(
-    requestedLimit,
-    FRIENDSHIP_LIMITS.MAX_LIMIT,
-  );
+  const limit = Math.min(requestedLimit, FRIENDSHIP_LIMITS.MAX_LIMIT);
 
   return {
     page,
@@ -72,38 +68,23 @@ function createPaginatedResult(items, total, page, limit) {
 
 function ensureParticipant(friendship, userId) {
   const isParticipant =
-    friendship.userOneId === userId ||
-    friendship.userTwoId === userId;
+    friendship.userOneId === userId || friendship.userTwoId === userId;
 
   if (!isParticipant) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.FORBIDDEN,
-      403,
-    );
+    throw new AppError(FRIENDSHIP_MESSAGES.FORBIDDEN, 403);
   }
 }
 
-export async function sendFriendRequest(
-  requesterId,
-  targetUserId,
-) {
+export async function sendFriendRequest(requesterId, targetUserId) {
   if (requesterId === targetUserId) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.SELF_REQUEST_FORBIDDEN,
-      400,
-    );
+    throw new AppError(FRIENDSHIP_MESSAGES.SELF_REQUEST_FORBIDDEN, 400);
   }
 
   const targetUser =
-    await friendshipRepository.findActiveUserById(
-      targetUserId,
-    );
+    await friendshipRepository.findActiveUserById(targetUserId);
 
   if (!targetUser) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.USER_NOT_FOUND,
-      404,
-    );
+    throw new AppError(FRIENDSHIP_MESSAGES.USER_NOT_FOUND, 404);
   }
 
   const [userOneId, userTwoId] = normalizePair(
@@ -117,20 +98,11 @@ export async function sendFriendRequest(
       userTwoId,
     );
 
-  if (
-    existingFriendship?.status ===
-    FRIENDSHIP_STATUSES.ACCEPTED
-  ) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.ALREADY_FRIENDS,
-      409,
-    );
+  if (existingFriendship?.status === FRIENDSHIP_STATUSES.ACCEPTED) {
+    throw new AppError(FRIENDSHIP_MESSAGES.ALREADY_FRIENDS, 409);
   }
 
-  if (
-    existingFriendship?.status ===
-    FRIENDSHIP_STATUSES.PENDING
-  ) {
+  if (existingFriendship?.status === FRIENDSHIP_STATUSES.PENDING) {
     throw new AppError(
       FRIENDSHIP_MESSAGES.REQUEST_ALREADY_PENDING,
       409,
@@ -163,17 +135,10 @@ export async function sendFriendRequest(
   return mapFriendship(friendship, requesterId);
 }
 
-export async function listIncomingRequests(
-  userId,
-  query = {},
-) {
-  const filters = parseOrThrow(
-    listFriendshipsQuerySchema,
-    query,
-  );
+export async function listIncomingRequests(userId, query = {}) {
+  const filters = parseOrThrow(listFriendshipsQuerySchema, query);
 
-  const { page, limit, skip } =
-    normalizePagination(filters);
+  const { page, limit, skip } = normalizePagination(filters);
 
   const { items, total } =
     await friendshipRepository.listIncomingRequests({
@@ -190,17 +155,10 @@ export async function listIncomingRequests(
   );
 }
 
-export async function listOutgoingRequests(
-  userId,
-  query = {},
-) {
-  const filters = parseOrThrow(
-    listFriendshipsQuerySchema,
-    query,
-  );
+export async function listOutgoingRequests(userId, query = {}) {
+  const filters = parseOrThrow(listFriendshipsQuerySchema, query);
 
-  const { page, limit, skip } =
-    normalizePagination(filters);
+  const { page, limit, skip } = normalizePagination(filters);
 
   const { items, total } =
     await friendshipRepository.listOutgoingRequests({
@@ -217,17 +175,10 @@ export async function listOutgoingRequests(
   );
 }
 
-export async function listFriends(
-  userId,
-  query = {},
-) {
-  const filters = parseOrThrow(
-    listFriendshipsQuerySchema,
-    query,
-  );
+export async function listFriends(userId, query = {}) {
+  const filters = parseOrThrow(listFriendshipsQuerySchema, query);
 
-  const { page, limit, skip } =
-    normalizePagination(filters);
+  const { page, limit, skip } = normalizePagination(filters);
 
   const { items, total } =
     await friendshipRepository.listAcceptedFriendships({
@@ -244,33 +195,21 @@ export async function listFriends(
   );
 }
 
-export async function acceptFriendRequest(
-  userId,
-  friendshipId,
-) {
+export async function acceptFriendRequest(userId, friendshipId) {
   const friendship =
-    await friendshipRepository.findFriendshipById(
-      friendshipId,
-    );
+    await friendshipRepository.findFriendshipById(friendshipId);
 
   if (!friendship) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.REQUEST_NOT_FOUND,
-      404,
-    );
+    throw new AppError(FRIENDSHIP_MESSAGES.REQUEST_NOT_FOUND, 404);
   }
 
   ensureParticipant(friendship, userId);
 
   if (
-    friendship.status !==
-      FRIENDSHIP_STATUSES.PENDING ||
+    friendship.status !== FRIENDSHIP_STATUSES.PENDING ||
     friendship.requestedById === userId
   ) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.FORBIDDEN,
-      403,
-    );
+    throw new AppError(FRIENDSHIP_MESSAGES.FORBIDDEN, 403);
   }
 
   const acceptedFriendship =
@@ -280,10 +219,7 @@ export async function acceptFriendRequest(
     });
 
   if (!acceptedFriendship) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.REQUEST_NOT_FOUND,
-      404,
-    );
+    throw new AppError(FRIENDSHIP_MESSAGES.REQUEST_NOT_FOUND, 404);
   }
 
   await createNotification({
@@ -298,39 +234,24 @@ export async function acceptFriendRequest(
     },
   });
 
-  return mapFriendship(
-    acceptedFriendship,
-    userId,
-  );
+  return mapFriendship(acceptedFriendship, userId);
 }
 
-export async function rejectFriendRequest(
-  userId,
-  friendshipId,
-) {
+export async function rejectFriendRequest(userId, friendshipId) {
   const friendship =
-    await friendshipRepository.findFriendshipById(
-      friendshipId,
-    );
+    await friendshipRepository.findFriendshipById(friendshipId);
 
   if (!friendship) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.REQUEST_NOT_FOUND,
-      404,
-    );
+    throw new AppError(FRIENDSHIP_MESSAGES.REQUEST_NOT_FOUND, 404);
   }
 
   ensureParticipant(friendship, userId);
 
   if (
-    friendship.status !==
-      FRIENDSHIP_STATUSES.PENDING ||
+    friendship.status !== FRIENDSHIP_STATUSES.PENDING ||
     friendship.requestedById === userId
   ) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.FORBIDDEN,
-      403,
-    );
+    throw new AppError(FRIENDSHIP_MESSAGES.FORBIDDEN, 403);
   }
 
   const rejectedFriendship =
@@ -340,100 +261,60 @@ export async function rejectFriendRequest(
     });
 
   if (!rejectedFriendship) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.REQUEST_NOT_FOUND,
-      404,
-    );
+    throw new AppError(FRIENDSHIP_MESSAGES.REQUEST_NOT_FOUND, 404);
   }
 
-  return mapFriendship(
-    rejectedFriendship,
-    userId,
-  );
+  return mapFriendship(rejectedFriendship, userId);
 }
 
-export async function cancelFriendRequest(
-  userId,
-  friendshipId,
-) {
+export async function cancelFriendRequest(userId, friendshipId) {
   const friendship =
-    await friendshipRepository.findFriendshipById(
-      friendshipId,
-    );
+    await friendshipRepository.findFriendshipById(friendshipId);
 
   if (!friendship) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.REQUEST_NOT_FOUND,
-      404,
-    );
+    throw new AppError(FRIENDSHIP_MESSAGES.REQUEST_NOT_FOUND, 404);
   }
 
   if (
-    friendship.status !==
-      FRIENDSHIP_STATUSES.PENDING ||
+    friendship.status !== FRIENDSHIP_STATUSES.PENDING ||
     friendship.requestedById !== userId
   ) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.FORBIDDEN,
-      403,
-    );
+    throw new AppError(FRIENDSHIP_MESSAGES.FORBIDDEN, 403);
   }
 
-  const result =
-    await friendshipRepository.cancelOutgoingRequest({
-      friendshipId,
-      requesterId: userId,
-    });
+  const result = await friendshipRepository.cancelOutgoingRequest({
+    friendshipId,
+    requesterId: userId,
+  });
 
   if (result.count === 0) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.REQUEST_NOT_FOUND,
-      404,
-    );
+    throw new AppError(FRIENDSHIP_MESSAGES.REQUEST_NOT_FOUND, 404);
   }
 
   return null;
 }
 
-export async function removeFriendship(
-  userId,
-  friendshipId,
-) {
+export async function removeFriendship(userId, friendshipId) {
   const friendship =
-    await friendshipRepository.findFriendshipById(
-      friendshipId,
-    );
+    await friendshipRepository.findFriendshipById(friendshipId);
 
   if (!friendship) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.FRIENDSHIP_NOT_FOUND,
-      404,
-    );
+    throw new AppError(FRIENDSHIP_MESSAGES.FRIENDSHIP_NOT_FOUND, 404);
   }
 
   ensureParticipant(friendship, userId);
 
-  if (
-    friendship.status !==
-    FRIENDSHIP_STATUSES.ACCEPTED
-  ) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.FRIENDSHIP_NOT_FOUND,
-      404,
-    );
+  if (friendship.status !== FRIENDSHIP_STATUSES.ACCEPTED) {
+    throw new AppError(FRIENDSHIP_MESSAGES.FRIENDSHIP_NOT_FOUND, 404);
   }
 
-  const result =
-    await friendshipRepository.removeAcceptedFriendship({
-      friendshipId,
-      userId,
-    });
+  const result = await friendshipRepository.removeAcceptedFriendship({
+    friendshipId,
+    userId,
+  });
 
   if (result.count === 0) {
-    throw new AppError(
-      FRIENDSHIP_MESSAGES.FRIENDSHIP_NOT_FOUND,
-      404,
-    );
+    throw new AppError(FRIENDSHIP_MESSAGES.FRIENDSHIP_NOT_FOUND, 404);
   }
 
   return null;

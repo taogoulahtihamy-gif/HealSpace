@@ -38,8 +38,7 @@ export const SUPPORT_MESSAGES = Object.freeze({
   FORBIDDEN: "Vous n'êtes pas autorisé à effectuer cette action.",
   CANNOT_ACCEPT_OWN_REQUEST:
     "Vous ne pouvez pas accepter votre propre demande de soutien.",
-  ALREADY_HANDLED:
-    "Cette demande de soutien n'est plus disponible.",
+  ALREADY_HANDLED: "Cette demande de soutien n'est plus disponible.",
   INVALID_STATUS:
     "Cette action n'est pas autorisée pour le statut actuel de la demande.",
 });

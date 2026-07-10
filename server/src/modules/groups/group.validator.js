@@ -38,7 +38,9 @@ export const createGroupSchema = z
     coverUrl: optionalHttpUrl,
     visibility: z
       .enum(Object.values(GROUP_VISIBILITIES), {
-        errorMap: () => ({ message: "La visibilité du groupe est invalide." }),
+        errorMap: () => ({
+          message: "La visibilité du groupe est invalide.",
+        }),
       })
       .optional(),
   })
@@ -70,7 +72,9 @@ export const updateGroupSchema = z
     coverUrl: optionalHttpUrl,
     visibility: z
       .enum(Object.values(GROUP_VISIBILITIES), {
-        errorMap: () => ({ message: "La visibilité du groupe est invalide." }),
+        errorMap: () => ({
+          message: "La visibilité du groupe est invalide.",
+        }),
       })
       .optional(),
   })
@@ -84,7 +88,9 @@ export const updateGroupMemberRoleSchema = z
     role: z.enum(
       [GROUP_MEMBER_ROLES.ADMIN, GROUP_MEMBER_ROLES.MEMBER],
       {
-        errorMap: () => ({ message: "Le rôle doit être ADMIN ou MEMBER." }),
+        errorMap: () => ({
+          message: "Le rôle doit être ADMIN ou MEMBER.",
+        }),
       },
     ),
   })

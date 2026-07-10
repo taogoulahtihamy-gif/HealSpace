@@ -19,14 +19,14 @@ router.post(
   "/direct",
   authMiddleware,
   validate(createDirectConversationSchema),
-  createDirectConversation
+  createDirectConversation,
 );
 
 router.post(
   "/group",
   authMiddleware,
   validate(createGroupConversationSchema),
-  createGroupConversation
+  createGroupConversation,
 );
 
 router.get("/", authMiddleware, getConversations);

@@ -1,8 +1,5 @@
 import { AppError } from "../../../core/errors/AppError.js";
-import {
-  mapReport,
-  mapReportList,
-} from "./report.mapper.js";
+import { mapReport, mapReportList } from "./report.mapper.js";
 import * as reportRepository from "./report.repository.js";
 import { listMyReportsQuerySchema } from "./report.validator.js";
 import {
@@ -40,10 +37,7 @@ function normalizePagination(query = {}) {
       ? parsedLimit
       : REPORT_LIMITS.DEFAULT_LIMIT;
 
-  const limit = Math.min(
-    requestedLimit,
-    REPORT_LIMITS.MAX_LIMIT,
-  );
+  const limit = Math.min(requestedLimit, REPORT_LIMITS.MAX_LIMIT);
 
   return {
     page,
@@ -64,33 +58,20 @@ function createPaginatedResult(items, total, page, limit) {
   };
 }
 
-async function targetExists({
-  reporterId,
-  targetType,
-  targetId,
-}) {
+async function targetExists({ reporterId, targetType, targetId }) {
   switch (targetType) {
     case REPORT_TARGET_TYPES.USER:
       if (targetId === reporterId) {
-        throw new AppError(
-          REPORT_MESSAGES.SELF_REPORT_FORBIDDEN,
-          400,
-        );
+        throw new AppError(REPORT_MESSAGES.SELF_REPORT_FORBIDDEN, 400);
       }
 
-      return reportRepository.findReportableUserById(
-        targetId,
-      );
+      return reportRepository.findReportableUserById(targetId);
 
     case REPORT_TARGET_TYPES.POST:
-      return reportRepository.findReportablePostById(
-        targetId,
-      );
+      return reportRepository.findReportablePostById(targetId);
 
     case REPORT_TARGET_TYPES.COMMENT:
-      return reportRepository.findReportableCommentById(
-        targetId,
-      );
+      return reportRepository.findReportableCommentById(targetId);
 
     case REPORT_TARGET_TYPES.MESSAGE:
       return reportRepository.findReportableMessageById(
@@ -113,10 +94,7 @@ async function ensureTargetExists(input) {
   const target = await targetExists(input);
 
   if (!target) {
-    throw new AppError(
-      REPORT_MESSAGES.TARGET_NOT_FOUND,
-      404,
-    );
+    throw new AppError(REPORT_MESSAGES.TARGET_NOT_FOUND, 404);
   }
 
   return target;
@@ -129,18 +107,14 @@ export async function createReport(reporterId, input) {
     targetId: input.targetId,
   });
 
-  const existingReport =
-    await reportRepository.findActiveReport({
-      reporterId,
-      targetType: input.targetType,
-      targetId: input.targetId,
-    });
+  const existingReport = await reportRepository.findActiveReport({
+    reporterId,
+    targetType: input.targetType,
+    targetId: input.targetId,
+  });
 
   if (existingReport) {
-    throw new AppError(
-      REPORT_MESSAGES.DUPLICATE_ACTIVE_REPORT,
-      409,
-    );
+    throw new AppError(REPORT_MESSAGES.DUPLICATE_ACTIVE_REPORT, 409);
   }
 
   const report = await reportRepository.createReport({
@@ -158,27 +132,21 @@ export async function createReport(reporterId, input) {
   return mapReport(report);
 }
 
-export async function listMyReports(
-  reporterId,
-  query = {},
-) {
-  const filters = parseOrThrow(
-    listMyReportsQuerySchema,
-    query,
-  );
+export async function listMyReports(reporterId, query = {}) {
+  const filters = parseOrThrow(listMyReportsQuerySchema, query);
 
-  const { page, limit, skip } =
-    normalizePagination(filters);
+  const { page, limit, skip } = normalizePagination(filters);
 
-  const { items, total } =
-    await reportRepository.listReportsByReporter({
+  const { items, total } = await reportRepository.listReportsByReporter(
+    {
       reporterId,
       skip,
       take: limit,
       status: filters.status,
       targetType: filters.targetType,
       reason: filters.reason,
-    });
+    },
+  );
 
   return createPaginatedResult(
     mapReportList(items),
@@ -188,21 +156,14 @@ export async function listMyReports(
   );
 }
 
-export async function getMyReportById(
-  reporterId,
-  reportId,
-) {
-  const report =
-    await reportRepository.findReportByIdForReporter(
-      reportId,
-      reporterId,
-    );
+export async function getMyReportById(reporterId, reportId) {
+  const report = await reportRepository.findReportByIdForReporter(
+    reportId,
+    reporterId,
+  );
 
   if (!report) {
-    throw new AppError(
-      REPORT_MESSAGES.NOT_FOUND,
-      404,
-    );
+    throw new AppError(REPORT_MESSAGES.NOT_FOUND, 404);
   }
 
   return mapReport(report);

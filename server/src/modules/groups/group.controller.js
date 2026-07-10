@@ -14,7 +14,10 @@ export const listGroups = asyncHandler(async (req, res) => {
 });
 
 export const listMyGroups = asyncHandler(async (req, res) => {
-  const result = await groupService.listMyGroups(req.user.id, req.query);
+  const result = await groupService.listMyGroups(
+    req.user.id,
+    req.query,
+  );
   return ApiResponse.success(res, result, GROUP_MESSAGES.LISTED);
 });
 
@@ -59,7 +62,11 @@ export const listGroupMembers = asyncHandler(async (req, res) => {
     req.params.groupId,
     req.query,
   );
-  return ApiResponse.success(res, result, GROUP_MESSAGES.MEMBERS_LISTED);
+  return ApiResponse.success(
+    res,
+    result,
+    GROUP_MESSAGES.MEMBERS_LISTED,
+  );
 });
 
 export const updateMemberRole = asyncHandler(async (req, res) => {

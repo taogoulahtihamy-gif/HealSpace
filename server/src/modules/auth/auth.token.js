@@ -1,17 +1,20 @@
+import crypto from "node:crypto";
 import jwt from "jsonwebtoken";
-import crypto from "crypto";
 
-export function generateAccessToken(user) {
+import { env } from "../../config/env.js";
+
+export function generateAccessToken(user, sessionId) {
   return jwt.sign(
     {
       id: user.id,
       email: user.email,
       role: user.role,
+      sessionId,
     },
-    process.env.JWT_SECRET,
+    env.JWT_SECRET,
     {
-      expiresIn: process.env.JWT_ACCESS_EXPIRES_IN || "15m",
-    }
+      expiresIn: env.JWT_ACCESS_EXPIRES_IN,
+    },
   );
 }
 
@@ -24,12 +27,13 @@ export function hashRefreshToken(token) {
 }
 
 export function verifyAccessToken(token) {
-  return jwt.verify(token, process.env.JWT_SECRET);
+  return jwt.verify(token, env.JWT_SECRET);
 }
 
 export function verifyRefreshToken(token) {
   if (!token || typeof token !== "string") {
-    const error = new Error("Refresh token invalide");
+    const error = new Error("Refresh token invalide.");
+
     error.statusCode = 401;
     throw error;
   }

@@ -55,3 +55,47 @@ export function toPublicUserProfile(user) {
     createdAt: user.createdAt,
   };
 }
+
+function toFriendshipSearchResponse(friendship, currentUserId) {
+  if (!friendship) {
+    return null;
+  }
+
+  return {
+    friendshipId: friendship.id,
+    status: friendship.status,
+    requestedById: friendship.requestedById,
+    direction:
+      friendship.requestedById === currentUserId
+        ? "OUTGOING"
+        : "INCOMING",
+  };
+}
+
+export function toUserSearchResponse(user, currentUserId) {
+  if (!user) {
+    return null;
+  }
+
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    username: user.username,
+    avatar: user.avatar,
+    bio: user.bio,
+    country: user.country,
+    city: user.city,
+    role: user.role,
+    currentMood: user.currentMood,
+    isVerified: user.isVerified,
+    friendship: toFriendshipSearchResponse(
+      user.friendship,
+      currentUserId,
+    ),
+  };
+}
+
+export function toUserSearchList(users, currentUserId) {
+  return users.map((user) => toUserSearchResponse(user, currentUserId));
+}

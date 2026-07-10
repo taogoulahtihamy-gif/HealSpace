@@ -2,19 +2,25 @@ import { prisma } from "../../config/prisma.js";
 
 export async function findUserByEmail(email) {
   return prisma.user.findUnique({
-    where: { email },
+    where: {
+      email,
+    },
   });
 }
 
 export async function findUserByUsername(username) {
   return prisma.user.findUnique({
-    where: { username },
+    where: {
+      username,
+    },
   });
 }
 
 export async function findUserById(id) {
   return prisma.user.findUnique({
-    where: { id },
+    where: {
+      id,
+    },
   });
 }
 
@@ -24,26 +30,13 @@ export async function createUser(data) {
   });
 }
 
-export async function createRefreshToken(data) {
-  return prisma.refreshToken.create({
-    data,
-  });
-}
-
-export async function findRefreshToken(token) {
-  return prisma.refreshToken.findUnique({
-    where: { token },
-    include: {
-      user: true,
+export async function updateLastLogin(userId, lastLogin = new Date()) {
+  return prisma.user.update({
+    where: {
+      id: userId,
     },
-  });
-}
-
-export async function revokeRefreshToken(token) {
-  return prisma.refreshToken.update({
-    where: { token },
     data: {
-      revokedAt: new Date(),
+      lastLogin,
     },
   });
 }

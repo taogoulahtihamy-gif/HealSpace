@@ -6,6 +6,7 @@ import {
   deactivateAccount,
   getMyProfile,
   getPublicProfile,
+  searchUsers,
   updateMyProfile,
   updatePrivacy,
 } from "./user.controller.js";
@@ -22,6 +23,7 @@ router.use(authMiddleware);
 
 // Les routes statiques restent avant "/:userId".
 router.get("/me", getMyProfile);
+router.get("/search", searchUsers);
 router.patch("/me", validate(updateProfileSchema), updateMyProfile);
 router.patch(
   "/me/password",

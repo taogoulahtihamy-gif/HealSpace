@@ -19,25 +19,25 @@ router.post(
     next();
   },
   validate(reactionSchema),
-  reactToPost
+  reactToPost,
 );
 
 router.get(
   "/posts/:postId/reactions",
   authMiddleware,
-  getPostReactions
+  getPostReactions,
 );
 
 router.get(
   "/posts/:postId/reactions/summary",
   authMiddleware,
-  getPostReactionSummary
+  getPostReactionSummary,
 );
 
 router.delete(
   "/posts/:postId/reactions",
   authMiddleware,
-  removeReaction
+  removeReaction,
 );
 
 export default router;

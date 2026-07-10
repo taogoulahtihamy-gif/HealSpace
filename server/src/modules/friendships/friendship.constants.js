@@ -27,17 +27,13 @@ export const FRIENDSHIP_MESSAGES = Object.freeze({
   ALREADY_FRIENDS: "Vous êtes déjà amis.",
   REQUEST_ALREADY_PENDING:
     "Une demande d'amitié est déjà en attente entre ces utilisateurs.",
-  FORBIDDEN:
-    "Vous n'êtes pas autorisé à effectuer cette action.",
-  INVALID_FILTERS:
-    "Les paramètres de pagination sont invalides.",
+  FORBIDDEN: "Vous n'êtes pas autorisé à effectuer cette action.",
+  INVALID_FILTERS: "Les paramètres de pagination sont invalides.",
 });
 
 export const FRIENDSHIP_NOTIFICATION = Object.freeze({
   REQUEST_TITLE: "Nouvelle demande d'amitié",
-  REQUEST_MESSAGE:
-    "Une personne souhaite vous ajouter à ses amis.",
+  REQUEST_MESSAGE: "Une personne souhaite vous ajouter à ses amis.",
   ACCEPTED_TITLE: "Demande d'amitié acceptée",
-  ACCEPTED_MESSAGE:
-    "Votre demande d'amitié a été acceptée.",
+  ACCEPTED_MESSAGE: "Votre demande d'amitié a été acceptée.",
 });

@@ -19,20 +19,11 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.get(
-  "/reports",
-  listReports,
-);
+router.get("/reports", listReports);
 
-router.get(
-  "/reports/:reportId",
-  getReport,
-);
+router.get("/reports/:reportId", getReport);
 
-router.patch(
-  "/reports/:reportId/review",
-  startReview,
-);
+router.patch("/reports/:reportId/review", startReview);
 
 router.patch(
   "/reports/:reportId/resolve",

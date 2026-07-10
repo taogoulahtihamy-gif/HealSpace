@@ -17,7 +17,9 @@ export const createReportSchema = z
   .object({
     targetType: z.enum(Object.values(REPORT_TARGET_TYPES)),
     targetId: z
-      .string({ required_error: "La cible du signalement est obligatoire." })
+      .string({
+        required_error: "La cible du signalement est obligatoire.",
+      })
       .trim()
       .min(1, "La cible du signalement est obligatoire."),
     reason: z.enum(Object.values(REPORT_REASONS)),
@@ -37,10 +39,7 @@ export const createReportSchema = z
   })
   .strict()
   .superRefine((data, context) => {
-    if (
-      data.reason === REPORT_REASONS.OTHER &&
-      !data.description
-    ) {
+    if (data.reason === REPORT_REASONS.OTHER && !data.description) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["description"],

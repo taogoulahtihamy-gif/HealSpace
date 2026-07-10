@@ -62,7 +62,12 @@ export async function findGroupBySlug(slug) {
   });
 }
 
-export async function listGroups({ currentUserId, skip, take, search }) {
+export async function listGroups({
+  currentUserId,
+  skip,
+  take,
+  search,
+}) {
   const where = {
     AND: [
       {
@@ -75,7 +80,9 @@ export async function listGroups({ currentUserId, skip, take, search }) {
         ? {
             OR: [
               { name: { contains: search, mode: "insensitive" } },
-              { description: { contains: search, mode: "insensitive" } },
+              {
+                description: { contains: search, mode: "insensitive" },
+              },
             ],
           }
         : {},

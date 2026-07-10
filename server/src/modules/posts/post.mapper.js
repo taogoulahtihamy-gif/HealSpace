@@ -1,5 +1,7 @@
 export function toPostAuthor(author) {
-  if (!author) return null;
+  if (!author) {
+    return null;
+  }
 
   return {
     id: author.id,

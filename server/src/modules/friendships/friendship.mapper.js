@@ -33,19 +33,14 @@ export function mapFriendship(friendship, currentUserId) {
       friendship.requestedById === currentUserId
         ? "OUTGOING"
         : "INCOMING",
-    friend: mapUser(
-      getOtherUser(friendship, currentUserId),
-    ),
+    friend: mapUser(getOtherUser(friendship, currentUserId)),
     respondedAt: friendship.respondedAt,
     createdAt: friendship.createdAt,
     updatedAt: friendship.updatedAt,
   };
 }
 
-export function mapFriendshipList(
-  friendships,
-  currentUserId,
-) {
+export function mapFriendshipList(friendships, currentUserId) {
   return friendships.map((friendship) =>
     mapFriendship(friendship, currentUserId),
   );

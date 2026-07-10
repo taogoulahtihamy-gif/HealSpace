@@ -18,7 +18,11 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.post("/", validate(createJournalEntrySchema), createJournalEntry);
+router.post(
+  "/",
+  validate(createJournalEntrySchema),
+  createJournalEntry,
+);
 router.get("/", listJournalEntries);
 
 // Cette route doit rester avant "/:entryId".

@@ -12,53 +12,33 @@ import { POST_MESSAGES } from "./post.constants.js";
 export const createPost = asyncHandler(async (req, res) => {
   const result = await createPostService(req.user.id, req.body);
 
-  return ApiResponse.created(
-    res,
-    result,
-    POST_MESSAGES.CREATED
-  );
+  return ApiResponse.created(res, result, POST_MESSAGES.CREATED);
 });
 
 export const getPosts = asyncHandler(async (req, res) => {
   const result = await getPostsService();
 
-  return ApiResponse.success(
-    res,
-    result,
-    POST_MESSAGES.LIST_FETCHED
-  );
+  return ApiResponse.success(res, result, POST_MESSAGES.LIST_FETCHED);
 });
 
 export const getPostById = asyncHandler(async (req, res) => {
   const result = await getPostByIdService(req.params.id);
 
-  return ApiResponse.success(
-    res,
-    result,
-    POST_MESSAGES.FETCHED
-  );
+  return ApiResponse.success(res, result, POST_MESSAGES.FETCHED);
 });
 
 export const updatePost = asyncHandler(async (req, res) => {
   const result = await updatePostService(
     req.user.id,
     req.params.id,
-    req.body
+    req.body,
   );
 
-  return ApiResponse.success(
-    res,
-    result,
-    POST_MESSAGES.UPDATED
-  );
+  return ApiResponse.success(res, result, POST_MESSAGES.UPDATED);
 });
 
 export const deletePost = asyncHandler(async (req, res) => {
   await deletePostService(req.user.id, req.params.id);
 
-  return ApiResponse.success(
-    res,
-    null,
-    POST_MESSAGES.DELETED
-  );
+  return ApiResponse.success(res, null, POST_MESSAGES.DELETED);
 });

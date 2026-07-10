@@ -3,9 +3,15 @@ import { AppError } from "../../../core/errors/AppError.js";
 import {
   toPrivateUserProfile,
   toPublicUserProfile,
+  toUserSearchList,
 } from "./user.mapper.js";
 import * as userRepository from "./user.repository.js";
-import { USER_MESSAGES, USER_VISIBILITIES } from "./user.constants.js";
+import {
+  USER_LIMITS,
+  USER_MESSAGES,
+  USER_VISIBILITIES,
+} from "./user.constants.js";
+import { searchUsersQuerySchema } from "./user.validator.js";
 
 async function getRequiredUser(userId) {
   const user = await userRepository.findUserById(userId);
@@ -17,6 +23,40 @@ async function getRequiredUser(userId) {
   return user;
 }
 
+function parseSearchQuery(query) {
+  const result = searchUsersQuerySchema.safeParse(query);
+
+  if (!result.success) {
+    throw new AppError(
+      result.error.issues?.[0]?.message || USER_MESSAGES.INVALID_SEARCH,
+      400,
+      result.error.flatten(),
+    );
+  }
+
+  return result.data;
+}
+
+function normalizeSearchPagination(query) {
+  const page = Number.parseInt(
+    query.page || String(USER_LIMITS.SEARCH_DEFAULT_PAGE),
+    10,
+  );
+
+  const requestedLimit = Number.parseInt(
+    query.limit || String(USER_LIMITS.SEARCH_DEFAULT_LIMIT),
+    10,
+  );
+
+  const limit = Math.min(requestedLimit, USER_LIMITS.SEARCH_MAX_LIMIT);
+
+  return {
+    page,
+    limit,
+    skip: (page - 1) * limit,
+  };
+}
+
 export async function getMyProfile(userId) {
   const user = await userRepository.findPrivateProfileById(userId);
 
@@ -25,6 +65,28 @@ export async function getMyProfile(userId) {
   }
 
   return toPrivateUserProfile(user);
+}
+
+export async function searchUsers(currentUserId, query = {}) {
+  const filters = parseSearchQuery(query);
+  const { page, limit, skip } = normalizeSearchPagination(filters);
+
+  const { items, total } = await userRepository.searchVisibleUsers({
+    currentUserId,
+    query: filters.q,
+    skip,
+    take: limit,
+  });
+
+  return {
+    items: toUserSearchList(items, currentUserId),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  };
 }
 
 export async function getPublicProfile(currentUserId, targetUserId) {
@@ -71,10 +133,7 @@ export async function updateMyProfile(userId, input) {
     );
 
     if (existingUser && existingUser.id !== userId) {
-      throw new AppError(
-        USER_MESSAGES.USERNAME_ALREADY_EXISTS,
-        409,
-      );
+      throw new AppError(USER_MESSAGES.USERNAME_ALREADY_EXISTS, 409);
     }
   }
 
@@ -113,10 +172,7 @@ export async function changePassword(userId, input) {
   );
 
   if (!passwordMatches) {
-    throw new AppError(
-      USER_MESSAGES.CURRENT_PASSWORD_INVALID,
-      401,
-    );
+    throw new AppError(USER_MESSAGES.CURRENT_PASSWORD_INVALID, 401);
   }
 
   const hashedPassword = await bcrypt.hash(input.newPassword, 12);
@@ -132,16 +188,10 @@ export async function changePassword(userId, input) {
 export async function deactivateAccount(userId, password) {
   const user = await getRequiredUser(userId);
 
-  const passwordMatches = await bcrypt.compare(
-    password,
-    user.password,
-  );
+  const passwordMatches = await bcrypt.compare(password, user.password);
 
   if (!passwordMatches) {
-    throw new AppError(
-      USER_MESSAGES.CURRENT_PASSWORD_INVALID,
-      401,
-    );
+    throw new AppError(USER_MESSAGES.CURRENT_PASSWORD_INVALID, 401);
   }
 
   await userRepository.deactivateUserAndRevokeSessions(userId);

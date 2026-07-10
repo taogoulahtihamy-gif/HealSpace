@@ -1,32 +1,34 @@
 import bcrypt from "bcrypt";
+
 import { AppError } from "../../../core/errors/AppError.js";
-import { toSessionUser, toProfileUser } from "./auth.mapper.js";
+import {
+  issueSessionService,
+  revokeAllSessionsService,
+  revokeCurrentSessionService,
+  rotateRefreshSessionService,
+} from "../sessions/session.service.js";
+
+import { AUTH_MESSAGES } from "./auth.constants.js";
+import { toProfileUser, toSessionUser } from "./auth.mapper.js";
 import {
   createUser,
   findUserByEmail,
-  findUserByUsername,
   findUserById,
-  createRefreshToken,
-  findRefreshToken,
-  revokeRefreshToken,
+  findUserByUsername,
+  updateLastLogin,
 } from "./auth.repository.js";
-import {
-  generateAccessToken,
-  generateRefreshToken,
-  hashRefreshToken,
-} from "./auth.token.js";
-import { AUTH_MESSAGES } from "./auth.constants.js";
+import { generateAccessToken } from "./auth.token.js";
 
-function getRefreshTokenExpirationDate() {
-  const days = Number(process.env.JWT_REFRESH_EXPIRES_IN_DAYS || 7);
-  const expiresAt = new Date();
-
-  expiresAt.setDate(expiresAt.getDate() + days);
-
-  return expiresAt;
+function toAuthenticationResult(user, issuedSession) {
+  return {
+    accessToken: generateAccessToken(user, issuedSession.session.id),
+    refreshToken: issuedSession.refreshToken,
+    session: issuedSession.publicSession,
+    user: toSessionUser(user),
+  };
 }
 
-export async function registerUser(payload) {
+export async function registerUser(payload, sessionContext) {
   const existingEmail = await findUserByEmail(payload.email);
 
   if (existingEmail) {
@@ -49,24 +51,12 @@ export async function registerUser(payload) {
     password: hashedPassword,
   });
 
-  const accessToken = generateAccessToken(user);
-  const refreshToken = generateRefreshToken();
-  const hashedRefreshToken = hashRefreshToken(refreshToken);
+  const issuedSession = await issueSessionService(user, sessionContext);
 
-  await createRefreshToken({
-    token: hashedRefreshToken,
-    userId: user.id,
-    expiresAt: getRefreshTokenExpirationDate(),
-  });
-
-  return {
-    accessToken,
-    refreshToken,
-    user: toSessionUser(user),
-  };
+  return toAuthenticationResult(user, issuedSession);
 }
 
-export async function loginUser(payload) {
+export async function loginUser(payload, sessionContext) {
   const user = await findUserByEmail(payload.email);
 
   if (!user) {
@@ -75,7 +65,7 @@ export async function loginUser(payload) {
 
   const passwordMatches = await bcrypt.compare(
     payload.password,
-    user.password
+    user.password,
   );
 
   if (!passwordMatches) {
@@ -86,21 +76,11 @@ export async function loginUser(payload) {
     throw new AppError(AUTH_MESSAGES.ACCOUNT_DISABLED, 403);
   }
 
-  const accessToken = generateAccessToken(user);
-  const refreshToken = generateRefreshToken();
-  const hashedRefreshToken = hashRefreshToken(refreshToken);
+  const issuedSession = await issueSessionService(user, sessionContext);
 
-  await createRefreshToken({
-    token: hashedRefreshToken,
-    userId: user.id,
-    expiresAt: getRefreshTokenExpirationDate(),
-  });
+  await updateLastLogin(user.id);
 
-  return {
-    accessToken,
-    refreshToken,
-    user: toSessionUser(user),
-  };
+  return toAuthenticationResult(user, issuedSession);
 }
 
 export async function getCurrentUser(userId) {
@@ -113,47 +93,27 @@ export async function getCurrentUser(userId) {
   return toProfileUser(user);
 }
 
-export async function refreshSession(refreshToken) {
-  const hashedRefreshToken = hashRefreshToken(refreshToken);
-
-  const storedRefreshToken = await findRefreshToken(hashedRefreshToken);
-
-  if (!storedRefreshToken) {
-    throw new AppError("Refresh token invalide.", 401);
-  }
-
-  if (storedRefreshToken.revokedAt) {
-    throw new AppError("Session déjà révoquée.", 401);
-  }
-
-  if (storedRefreshToken.expiresAt < new Date()) {
-    throw new AppError("Session expirée.", 401);
-  }
-
-  if (storedRefreshToken.user.status !== "ACTIVE") {
-    throw new AppError(AUTH_MESSAGES.ACCOUNT_DISABLED, 403);
-  }
-
-  const accessToken = generateAccessToken(storedRefreshToken.user);
+export async function refreshSession(refreshToken, sessionContext) {
+  const rotatedSession = await rotateRefreshSessionService(
+    refreshToken,
+    sessionContext,
+  );
 
   return {
-    accessToken,
-    user: toSessionUser(storedRefreshToken.user),
+    accessToken: generateAccessToken(
+      rotatedSession.user,
+      rotatedSession.session.id,
+    ),
+    refreshToken: rotatedSession.refreshToken,
+    session: rotatedSession.publicSession,
+    user: toSessionUser(rotatedSession.user),
   };
 }
 
-export async function logoutUser(refreshToken) {
-  const hashedRefreshToken = hashRefreshToken(refreshToken);
+export async function logoutUser(userId, sessionId) {
+  return revokeCurrentSessionService(userId, sessionId);
+}
 
-  const storedRefreshToken = await findRefreshToken(hashedRefreshToken);
-
-  if (!storedRefreshToken) {
-    throw new AppError("Refresh token invalide.", 401);
-  }
-
-  if (storedRefreshToken.revokedAt) {
-    return;
-  }
-
-  await revokeRefreshToken(hashedRefreshToken);
+export async function logoutAllUser(userId) {
+  return revokeAllSessionsService(userId);
 }

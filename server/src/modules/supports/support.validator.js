@@ -45,8 +45,6 @@ export const listMySupportsQuerySchema = z
     limit: positiveIntegerQuerySchema.optional(),
     type: z.enum(Object.values(SUPPORT_TYPES)).optional(),
     status: z.enum(Object.values(SUPPORT_STATUSES)).optional(),
-    role: z
-      .enum(Object.values(SUPPORT_ROLES))
-      .optional(),
+    role: z.enum(Object.values(SUPPORT_ROLES)).optional(),
   })
   .passthrough();

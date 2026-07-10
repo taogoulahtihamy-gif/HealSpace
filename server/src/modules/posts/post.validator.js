@@ -20,16 +20,10 @@ export const createPostSchema = z.object({
     .optional(),
 
   intention: z
-    .enum([
-      "BE_LISTENED",
-      "RECEIVE_ADVICE",
-      "FIND_SIMILAR_PEOPLE",
-    ])
+    .enum(["BE_LISTENED", "RECEIVE_ADVICE", "FIND_SIMILAR_PEOPLE"])
     .optional(),
 
-  visibility: z
-    .enum(["PUBLIC", "GROUP", "PRIVATE"])
-    .optional(),
+  visibility: z.enum(["PUBLIC", "GROUP", "PRIVATE"]).optional(),
 
   isAnonymous: z.boolean().optional(),
 });

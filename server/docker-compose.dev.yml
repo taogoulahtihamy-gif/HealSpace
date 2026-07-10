@@ -1,0 +1,8 @@
+services:
+  api:
+    volumes:
+      - ./src:/app/src
+      - ./scripts:/app/scripts
+      - ./prisma:/app/prisma
+      - ./core:/app/core
+    command: ["npm", "run", "dev"]

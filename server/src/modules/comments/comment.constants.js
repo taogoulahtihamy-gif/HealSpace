@@ -11,10 +11,8 @@ export const COMMENT_MESSAGES = Object.freeze({
 
 export const COMMENT_NOTIFICATION = Object.freeze({
   POST_TITLE: "Nouveau commentaire",
-  POST_MESSAGE:
-    "Une personne a commenté votre publication.",
+  POST_MESSAGE: "Une personne a commenté votre publication.",
 
   REPLY_TITLE: "Nouvelle réponse",
-  REPLY_MESSAGE:
-    "Une personne a répondu à votre commentaire.",
+  REPLY_MESSAGE: "Une personne a répondu à votre commentaire.",
 });

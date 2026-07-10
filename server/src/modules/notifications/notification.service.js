@@ -1,5 +1,9 @@
 import { AppError } from "../../../core/errors/AppError.js";
 import {
+  publishNotificationToUser,
+  publishUnreadCountToUser,
+} from "../../sockets/socket.publisher.js";
+import {
   NOTIFICATION_LIMITS,
   NOTIFICATION_MESSAGES,
 } from "./notification.constants.js";
@@ -18,8 +22,7 @@ function parseOrThrow(schema, input, fallbackMessage) {
 
   if (!result.success) {
     const message =
-      result.error.issues?.[0]?.message ||
-      fallbackMessage;
+      result.error.issues?.[0]?.message || fallbackMessage;
 
     throw new AppError(message, 400);
   }
@@ -29,6 +32,7 @@ function parseOrThrow(schema, input, fallbackMessage) {
 
 function normalizePagination(query) {
   const parsedPage = Number.parseInt(query.page, 10);
+
   const parsedLimit = Number.parseInt(query.limit, 10);
 
   const page =
@@ -41,10 +45,7 @@ function normalizePagination(query) {
       ? parsedLimit
       : NOTIFICATION_LIMITS.DEFAULT_LIMIT;
 
-  const limit = Math.min(
-    requestedLimit,
-    NOTIFICATION_LIMITS.MAX_LIMIT,
-  );
+  const limit = Math.min(requestedLimit, NOTIFICATION_LIMITS.MAX_LIMIT);
 
   return {
     page,
@@ -73,13 +74,19 @@ async function getRequiredNotification(notificationId, userId) {
     );
 
   if (!notification) {
-    throw new AppError(
-      NOTIFICATION_MESSAGES.NOT_FOUND,
-      404,
-    );
+    throw new AppError(NOTIFICATION_MESSAGES.NOT_FOUND, 404);
   }
 
   return notification;
+}
+
+async function publishCurrentUnreadCount(userId) {
+  const count =
+    await notificationRepository.countUnreadNotifications(userId);
+
+  publishUnreadCountToUser(userId, count);
+
+  return count;
 }
 
 /**
@@ -93,23 +100,26 @@ export async function createNotification(input) {
     NOTIFICATION_MESSAGES.INVALID_PAYLOAD,
   );
 
-  // Une action personnelle ne doit pas générer de notification
-  // pour son propre auteur.
   if (data.actorId && data.actorId === data.userId) {
     return null;
   }
 
-  const notification =
-    await notificationRepository.createNotification({
-      userId: data.userId,
-      actorId: data.actorId ?? null,
-      type: data.type,
-      title: data.title,
-      message: data.message,
-      data: data.data ?? null,
-    });
+  const notification = await notificationRepository.createNotification({
+    userId: data.userId,
+    actorId: data.actorId ?? null,
+    type: data.type,
+    title: data.title,
+    message: data.message,
+    data: data.data ?? null,
+  });
 
-  return mapNotification(notification);
+  const mappedNotification = mapNotification(notification);
+
+  publishNotificationToUser(data.userId, mappedNotification);
+
+  await publishCurrentUnreadCount(data.userId);
+
+  return mappedNotification;
 }
 
 export async function listNotifications(userId, query = {}) {
@@ -119,8 +129,7 @@ export async function listNotifications(userId, query = {}) {
     NOTIFICATION_MESSAGES.INVALID_FILTER,
   );
 
-  const { page, limit, skip } =
-    normalizePagination(filters);
+  const { page, limit, skip } = normalizePagination(filters);
 
   const isRead =
     filters.isRead === undefined
@@ -146,19 +155,14 @@ export async function listNotifications(userId, query = {}) {
 
 export async function getUnreadCount(userId) {
   const count =
-    await notificationRepository.countUnreadNotifications(
-      userId,
-    );
+    await notificationRepository.countUnreadNotifications(userId);
 
   return {
     count,
   };
 }
 
-export async function markNotificationAsRead(
-  userId,
-  notificationId,
-) {
+export async function markNotificationAsRead(userId, notificationId) {
   const notification = await getRequiredNotification(
     notificationId,
     userId,
@@ -174,6 +178,8 @@ export async function markNotificationAsRead(
       new Date(),
     );
 
+  await publishCurrentUnreadCount(userId);
+
   return mapNotification(updatedNotification);
 }
 
@@ -184,21 +190,20 @@ export async function markAllNotificationsAsRead(userId) {
       new Date(),
     );
 
+  publishUnreadCountToUser(userId, 0);
+
   return {
     updatedCount: result.count,
     unreadCount: 0,
   };
 }
 
-export async function deleteNotification(
-  userId,
-  notificationId,
-) {
+export async function deleteNotification(userId, notificationId) {
   await getRequiredNotification(notificationId, userId);
 
-  await notificationRepository.deleteNotification(
-    notificationId,
-  );
+  await notificationRepository.deleteNotification(notificationId);
+
+  await publishCurrentUnreadCount(userId);
 
   return null;
 }

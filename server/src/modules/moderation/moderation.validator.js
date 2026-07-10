@@ -28,21 +28,10 @@ export const listModerationReportsQuerySchema = z
     page: positiveIntegerQuerySchema.optional(),
     limit: positiveIntegerQuerySchema.optional(),
     status: z
-      .enum([
-        "PENDING",
-        "UNDER_REVIEW",
-        "RESOLVED",
-        "REJECTED",
-      ])
+      .enum(["PENDING", "UNDER_REVIEW", "RESOLVED", "REJECTED"])
       .optional(),
     targetType: z
-      .enum([
-        "USER",
-        "POST",
-        "COMMENT",
-        "MESSAGE",
-        "GROUP",
-      ])
+      .enum(["USER", "POST", "COMMENT", "MESSAGE", "GROUP"])
       .optional(),
     reason: z
       .enum([
@@ -73,9 +62,7 @@ export const rejectReportSchema = z
 
 export const updateUserStatusSchema = z
   .object({
-    status: z.enum(
-      Object.values(MODERATION_USER_STATUSES),
-    ),
+    status: z.enum(Object.values(MODERATION_USER_STATUSES)),
     note: moderationNoteSchema,
   })
   .strict();

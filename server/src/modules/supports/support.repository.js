@@ -84,10 +84,7 @@ export async function listMySupportRequests({
       : role === "supporter"
         ? { supporterId: userId }
         : {
-            OR: [
-              { requesterId: userId },
-              { supporterId: userId },
-            ],
+            OR: [{ requesterId: userId }, { supporterId: userId }],
           };
 
   const where = {
@@ -150,9 +147,7 @@ export async function acceptSupportRequest(
   return findSupportRequestById(supportRequestId);
 }
 
-export async function completeSupportRequest(
-  supportRequestId,
-) {
+export async function completeSupportRequest(supportRequestId) {
   return prisma.supportRequest.update({
     where: {
       id: supportRequestId,
@@ -165,9 +160,7 @@ export async function completeSupportRequest(
   });
 }
 
-export async function cancelSupportRequest(
-  supportRequestId,
-) {
+export async function cancelSupportRequest(supportRequestId) {
   return prisma.supportRequest.update({
     where: {
       id: supportRequestId,

@@ -18,14 +18,8 @@ router.get("/", listNotifications);
 router.get("/unread-count", getUnreadCount);
 router.patch("/read-all", markAllNotificationsAsRead);
 
-router.patch(
-  "/:notificationId/read",
-  markNotificationAsRead,
-);
+router.patch("/:notificationId/read", markNotificationAsRead);
 
-router.delete(
-  "/:notificationId",
-  deleteNotification,
-);
+router.delete("/:notificationId", deleteNotification);
 
 export default router;

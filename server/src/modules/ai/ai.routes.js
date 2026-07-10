@@ -16,14 +16,14 @@ router.post(
   "/analyze-mood",
   authMiddleware,
   validate(analyzeMoodSchema),
-  analyzeMood
+  analyzeMood,
 );
 
 router.post(
   "/support-message",
   authMiddleware,
   validate(generateSupportSchema),
-  generateSupportMessage
+  generateSupportMessage,
 );
 
 export default router;

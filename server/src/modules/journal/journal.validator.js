@@ -5,9 +5,10 @@ const moodSchema = z.enum(Object.values(JOURNAL_MOODS), {
   errorMap: () => ({ message: "L'humeur est invalide." }),
 });
 
-const occurredAtSchema = z
-  .string()
-  .datetime({ offset: true, message: "La date doit être au format ISO 8601." });
+const occurredAtSchema = z.string().datetime({
+  offset: true,
+  message: "La date doit être au format ISO 8601.",
+});
 
 export const createJournalEntrySchema = z
   .object({

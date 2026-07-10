@@ -7,6 +7,9 @@ export function toSessionUser(user) {
     email: user.email,
     avatar: user.avatar,
     role: user.role,
+    isVerified: user.isVerified,
+    emailVerified: user.emailVerified,
+    emailVerifiedAt: user.emailVerifiedAt,
   };
 }
 
@@ -29,6 +32,9 @@ export function toProfileUser(user) {
     timezone: user.timezone,
     role: user.role,
     status: user.status,
+    isVerified: user.isVerified,
+    emailVerified: user.emailVerified,
+    emailVerifiedAt: user.emailVerifiedAt,
     createdAt: user.createdAt,
   };
 }

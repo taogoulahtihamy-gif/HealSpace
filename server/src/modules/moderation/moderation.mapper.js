@@ -50,9 +50,7 @@ export function mapModerationReport(report) {
     reporter: mapUser(report.reporter),
     reviewer: mapUser(report.reviewer),
     moderationActions:
-      report.moderationActions?.map(
-        mapModerationAction,
-      ) ?? [],
+      report.moderationActions?.map(mapModerationAction) ?? [],
   };
 }
 

@@ -12,10 +12,7 @@ function mapUser(user) {
   };
 }
 
-export function mapSupportRequest(
-  supportRequest,
-  currentUserId,
-) {
+export function mapSupportRequest(supportRequest, currentUserId) {
   if (!supportRequest) {
     return null;
   }
@@ -24,8 +21,7 @@ export function mapSupportRequest(
     supportRequest.requesterId === currentUserId ||
     supportRequest.supporterId === currentUserId;
 
-  const hideRequester =
-    supportRequest.isAnonymous && !isParticipant;
+  const hideRequester = supportRequest.isAnonymous && !isParticipant;
 
   return {
     id: supportRequest.id,
@@ -34,9 +30,7 @@ export function mapSupportRequest(
     isAnonymous: supportRequest.isAnonymous,
     status: supportRequest.status,
 
-    requester: hideRequester
-      ? null
-      : mapUser(supportRequest.requester),
+    requester: hideRequester ? null : mapUser(supportRequest.requester),
 
     supporter: mapUser(supportRequest.supporter),
 
@@ -48,11 +42,6 @@ export function mapSupportRequest(
   };
 }
 
-export function mapSupportRequestList(
-  items,
-  currentUserId,
-) {
-  return items.map((item) =>
-    mapSupportRequest(item, currentUserId),
-  );
+export function mapSupportRequestList(items, currentUserId) {
+  return items.map((item) => mapSupportRequest(item, currentUserId));
 }

@@ -37,12 +37,10 @@ export const MODERATION_MESSAGES = Object.freeze({
   USER_NOT_FOUND: "Utilisateur introuvable.",
   REPORT_ALREADY_ASSIGNED:
     "Ce signalement est déjà pris en charge par un autre modérateur.",
-  REPORT_ALREADY_CLOSED:
-    "Ce signalement a déjà été clôturé.",
+  REPORT_ALREADY_CLOSED: "Ce signalement a déjà été clôturé.",
   CANNOT_MODERATE_SELF:
     "Vous ne pouvez pas modifier votre propre statut.",
   MODERATOR_CANNOT_MODERATE_PRIVILEGED_USER:
     "Un modérateur ne peut pas modifier le statut d'un modérateur ou d'un administrateur.",
-  INVALID_FILTERS:
-    "Les filtres de modération sont invalides.",
+  INVALID_FILTERS: "Les filtres de modération sont invalides.",
 });

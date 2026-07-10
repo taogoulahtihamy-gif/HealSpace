@@ -1,10 +1,8 @@
 import { AppError } from "../../../core/errors/AppError.js";
 
-import { createNotification } from
-  "../notifications/notification.service.js";
+import { createNotification } from "../notifications/notification.service.js";
 
-import { findPostById } from
-  "../posts/post.repository.js";
+import { findPostById } from "../posts/post.repository.js";
 
 import {
   createComment,
@@ -28,10 +26,7 @@ async function getRequiredPost(postId) {
   const post = await findPostById(postId);
 
   if (!post || post.deletedAt) {
-    throw new AppError(
-      COMMENT_MESSAGES.POST_NOT_FOUND,
-      404,
-    );
+    throw new AppError(COMMENT_MESSAGES.POST_NOT_FOUND, 404);
   }
 
   return post;
@@ -49,28 +44,18 @@ async function getParentComment(parentId, postId) {
     parentComment.deletedAt ||
     parentComment.postId !== postId
   ) {
-    throw new AppError(
-      COMMENT_MESSAGES.NOT_FOUND,
-      404,
-    );
+    throw new AppError(COMMENT_MESSAGES.NOT_FOUND, 404);
   }
 
   return parentComment;
 }
 
-function getNotificationRecipient({
-  userId,
-  post,
-  parentComment,
-}) {
+function getNotificationRecipient({ userId, post, parentComment }) {
   /*
    * Pour une réponse, on notifie d'abord l'auteur
    * du commentaire parent.
    */
-  if (
-    parentComment &&
-    parentComment.authorId !== userId
-  ) {
+  if (parentComment && parentComment.authorId !== userId) {
     return {
       userId: parentComment.authorId,
       title: COMMENT_NOTIFICATION.REPLY_TITLE,
@@ -94,11 +79,7 @@ function getNotificationRecipient({
   return null;
 }
 
-export async function createCommentService(
-  userId,
-  postId,
-  payload,
-) {
+export async function createCommentService(userId, postId, payload) {
   const post = await getRequiredPost(postId);
 
   const parentComment = await getParentComment(
@@ -113,12 +94,11 @@ export async function createCommentService(
     content: payload.content,
   });
 
-  const notificationRecipient =
-    getNotificationRecipient({
-      userId,
-      post,
-      parentComment,
-    });
+  const notificationRecipient = getNotificationRecipient({
+    userId,
+    post,
+    parentComment,
+  });
 
   /*
    * Aucune notification lorsque l'utilisateur
@@ -150,55 +130,33 @@ export async function getCommentsByPostService(postId) {
   return toCommentListResponse(comments);
 }
 
-export async function updateCommentService(
-  userId,
-  commentId,
-  payload,
-) {
+export async function updateCommentService(userId, commentId, payload) {
   const comment = await findCommentById(commentId);
 
   if (!comment || comment.deletedAt) {
-    throw new AppError(
-      COMMENT_MESSAGES.NOT_FOUND,
-      404,
-    );
+    throw new AppError(COMMENT_MESSAGES.NOT_FOUND, 404);
   }
 
   if (comment.authorId !== userId) {
-    throw new AppError(
-      COMMENT_MESSAGES.FORBIDDEN,
-      403,
-    );
+    throw new AppError(COMMENT_MESSAGES.FORBIDDEN, 403);
   }
 
-  const updatedComment = await updateComment(
-    commentId,
-    {
-      content: payload.content,
-    },
-  );
+  const updatedComment = await updateComment(commentId, {
+    content: payload.content,
+  });
 
   return toCommentResponse(updatedComment);
 }
 
-export async function deleteCommentService(
-  userId,
-  commentId,
-) {
+export async function deleteCommentService(userId, commentId) {
   const comment = await findCommentById(commentId);
 
   if (!comment || comment.deletedAt) {
-    throw new AppError(
-      COMMENT_MESSAGES.NOT_FOUND,
-      404,
-    );
+    throw new AppError(COMMENT_MESSAGES.NOT_FOUND, 404);
   }
 
   if (comment.authorId !== userId) {
-    throw new AppError(
-      COMMENT_MESSAGES.FORBIDDEN,
-      403,
-    );
+    throw new AppError(COMMENT_MESSAGES.FORBIDDEN, 403);
   }
 
   await softDeleteComment(commentId);

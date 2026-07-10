@@ -12,14 +12,10 @@ export const reactToPost = asyncHandler(async (req, res) => {
   const result = await reactToPostService(
     req.user.id,
     req.params.postId,
-    req.body
+    req.body,
   );
 
-  return ApiResponse.success(
-    res,
-    result,
-    REACTION_MESSAGES.CREATED
-  );
+  return ApiResponse.success(res, result, REACTION_MESSAGES.CREATED);
 });
 
 export const getPostReactions = asyncHandler(async (req, res) => {
@@ -28,7 +24,7 @@ export const getPostReactions = asyncHandler(async (req, res) => {
   return ApiResponse.success(
     res,
     result,
-    REACTION_MESSAGES.LIST_FETCHED
+    REACTION_MESSAGES.LIST_FETCHED,
   );
 });
 
@@ -38,16 +34,12 @@ export const getPostReactionSummary = asyncHandler(async (req, res) => {
   return ApiResponse.success(
     res,
     result,
-    REACTION_MESSAGES.SUMMARY_FETCHED
+    REACTION_MESSAGES.SUMMARY_FETCHED,
   );
 });
 
 export const removeReaction = asyncHandler(async (req, res) => {
   await removeReactionService(req.user.id, req.params.postId);
 
-  return ApiResponse.success(
-    res,
-    null,
-    REACTION_MESSAGES.DELETED
-  );
+  return ApiResponse.success(res, null, REACTION_MESSAGES.DELETED);
 });

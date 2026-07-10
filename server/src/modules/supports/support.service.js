@@ -1,6 +1,5 @@
 import { AppError } from "../../../core/errors/AppError.js";
-import { createNotification } from
-  "../notifications/notification.service.js";
+import { createNotification } from "../notifications/notification.service.js";
 import {
   mapSupportRequest,
   mapSupportRequestList,
@@ -46,10 +45,7 @@ function normalizePagination(query = {}) {
       ? parsedLimit
       : SUPPORT_LIMITS.DEFAULT_LIMIT;
 
-  const limit = Math.min(
-    requestedLimit,
-    SUPPORT_LIMITS.MAX_LIMIT,
-  );
+  const limit = Math.min(requestedLimit, SUPPORT_LIMITS.MAX_LIMIT);
 
   return {
     page,
@@ -72,15 +68,10 @@ function createPaginatedResult(items, total, page, limit) {
 
 async function getRequiredSupportRequest(supportRequestId) {
   const supportRequest =
-    await supportRepository.findSupportRequestById(
-      supportRequestId,
-    );
+    await supportRepository.findSupportRequestById(supportRequestId);
 
   if (!supportRequest) {
-    throw new AppError(
-      SUPPORT_MESSAGES.NOT_FOUND,
-      404,
-    );
+    throw new AppError(SUPPORT_MESSAGES.NOT_FOUND, 404);
   }
 
   return supportRequest;
@@ -93,37 +84,23 @@ function isParticipant(supportRequest, userId) {
   );
 }
 
-export async function createSupportRequest(
-  userId,
-  input,
-) {
-  const supportRequest =
-    await supportRepository.createSupportRequest({
-      requesterId: userId,
-      supporterId: null,
-      type: input.type,
-      message: input.message,
-      isAnonymous: input.isAnonymous ?? false,
-      status: SUPPORT_STATUSES.OPEN,
-    });
+export async function createSupportRequest(userId, input) {
+  const supportRequest = await supportRepository.createSupportRequest({
+    requesterId: userId,
+    supporterId: null,
+    type: input.type,
+    message: input.message,
+    isAnonymous: input.isAnonymous ?? false,
+    status: SUPPORT_STATUSES.OPEN,
+  });
 
-  return mapSupportRequest(
-    supportRequest,
-    userId,
-  );
+  return mapSupportRequest(supportRequest, userId);
 }
 
-export async function listAvailableSupportRequests(
-  userId,
-  query = {},
-) {
-  const filters = parseOrThrow(
-    listAvailableSupportsQuerySchema,
-    query,
-  );
+export async function listAvailableSupportRequests(userId, query = {}) {
+  const filters = parseOrThrow(listAvailableSupportsQuerySchema, query);
 
-  const { page, limit, skip } =
-    normalizePagination(filters);
+  const { page, limit, skip } = normalizePagination(filters);
 
   const { items, total } =
     await supportRepository.listAvailableSupportRequests({
@@ -141,17 +118,10 @@ export async function listAvailableSupportRequests(
   );
 }
 
-export async function listMySupportRequests(
-  userId,
-  query = {},
-) {
-  const filters = parseOrThrow(
-    listMySupportsQuerySchema,
-    query,
-  );
+export async function listMySupportRequests(userId, query = {}) {
+  const filters = parseOrThrow(listMySupportsQuerySchema, query);
 
-  const { page, limit, skip } =
-    normalizePagination(filters);
+  const { page, limit, skip } = normalizePagination(filters);
 
   const { items, total } =
     await supportRepository.listMySupportRequests({
@@ -171,61 +141,38 @@ export async function listMySupportRequests(
   );
 }
 
-export async function getSupportRequestById(
-  userId,
-  supportRequestId,
-) {
+export async function getSupportRequestById(userId, supportRequestId) {
   const supportRequest =
     await getRequiredSupportRequest(supportRequestId);
 
-  const isOpen =
-    supportRequest.status === SUPPORT_STATUSES.OPEN;
+  const isOpen = supportRequest.status === SUPPORT_STATUSES.OPEN;
 
   if (!isOpen && !isParticipant(supportRequest, userId)) {
-    throw new AppError(
-      SUPPORT_MESSAGES.FORBIDDEN,
-      403,
-    );
+    throw new AppError(SUPPORT_MESSAGES.FORBIDDEN, 403);
   }
 
-  return mapSupportRequest(
-    supportRequest,
-    userId,
-  );
+  return mapSupportRequest(supportRequest, userId);
 }
 
-export async function acceptSupportRequest(
-  userId,
-  supportRequestId,
-) {
+export async function acceptSupportRequest(userId, supportRequestId) {
   const supportRequest =
     await getRequiredSupportRequest(supportRequestId);
 
   if (supportRequest.requesterId === userId) {
-    throw new AppError(
-      SUPPORT_MESSAGES.CANNOT_ACCEPT_OWN_REQUEST,
-      400,
-    );
+    throw new AppError(SUPPORT_MESSAGES.CANNOT_ACCEPT_OWN_REQUEST, 400);
   }
 
   if (supportRequest.status !== SUPPORT_STATUSES.OPEN) {
-    throw new AppError(
-      SUPPORT_MESSAGES.ALREADY_HANDLED,
-      409,
-    );
+    throw new AppError(SUPPORT_MESSAGES.ALREADY_HANDLED, 409);
   }
 
-  const acceptedSupport =
-    await supportRepository.acceptSupportRequest(
-      supportRequestId,
-      userId,
-    );
+  const acceptedSupport = await supportRepository.acceptSupportRequest(
+    supportRequestId,
+    userId,
+  );
 
   if (!acceptedSupport) {
-    throw new AppError(
-      SUPPORT_MESSAGES.ALREADY_HANDLED,
-      409,
-    );
+    throw new AppError(SUPPORT_MESSAGES.ALREADY_HANDLED, 409);
   }
 
   await createNotification({
@@ -240,37 +187,23 @@ export async function acceptSupportRequest(
     },
   });
 
-  return mapSupportRequest(
-    acceptedSupport,
-    userId,
-  );
+  return mapSupportRequest(acceptedSupport, userId);
 }
 
-export async function completeSupportRequest(
-  userId,
-  supportRequestId,
-) {
+export async function completeSupportRequest(userId, supportRequestId) {
   const supportRequest =
     await getRequiredSupportRequest(supportRequestId);
 
   if (supportRequest.status !== SUPPORT_STATUSES.ACCEPTED) {
-    throw new AppError(
-      SUPPORT_MESSAGES.INVALID_STATUS,
-      409,
-    );
+    throw new AppError(SUPPORT_MESSAGES.INVALID_STATUS, 409);
   }
 
   if (!isParticipant(supportRequest, userId)) {
-    throw new AppError(
-      SUPPORT_MESSAGES.FORBIDDEN,
-      403,
-    );
+    throw new AppError(SUPPORT_MESSAGES.FORBIDDEN, 403);
   }
 
   const completedSupport =
-    await supportRepository.completeSupportRequest(
-      supportRequestId,
-    );
+    await supportRepository.completeSupportRequest(supportRequestId);
 
   const recipientId =
     userId === completedSupport.requesterId
@@ -291,42 +224,27 @@ export async function completeSupportRequest(
     });
   }
 
-  return mapSupportRequest(
-    completedSupport,
-    userId,
-  );
+  return mapSupportRequest(completedSupport, userId);
 }
 
-export async function cancelSupportRequest(
-  userId,
-  supportRequestId,
-) {
+export async function cancelSupportRequest(userId, supportRequestId) {
   const supportRequest =
     await getRequiredSupportRequest(supportRequestId);
 
   if (supportRequest.requesterId !== userId) {
-    throw new AppError(
-      SUPPORT_MESSAGES.FORBIDDEN,
-      403,
-    );
+    throw new AppError(SUPPORT_MESSAGES.FORBIDDEN, 403);
   }
 
   if (
-    ![
-      SUPPORT_STATUSES.OPEN,
-      SUPPORT_STATUSES.ACCEPTED,
-    ].includes(supportRequest.status)
+    ![SUPPORT_STATUSES.OPEN, SUPPORT_STATUSES.ACCEPTED].includes(
+      supportRequest.status,
+    )
   ) {
-    throw new AppError(
-      SUPPORT_MESSAGES.INVALID_STATUS,
-      409,
-    );
+    throw new AppError(SUPPORT_MESSAGES.INVALID_STATUS, 409);
   }
 
   const cancelledSupport =
-    await supportRepository.cancelSupportRequest(
-      supportRequestId,
-    );
+    await supportRepository.cancelSupportRequest(supportRequestId);
 
   if (cancelledSupport.supporterId) {
     await createNotification({
@@ -342,8 +260,5 @@ export async function cancelSupportRequest(
     });
   }
 
-  return mapSupportRequest(
-    cancelledSupport,
-    userId,
-  );
+  return mapSupportRequest(cancelledSupport, userId);
 }

@@ -3,6 +3,7 @@ export const NOTIFICATION_TYPES = Object.freeze({
   COMMENT: "COMMENT",
   MESSAGE: "MESSAGE",
   GROUP_INVITATION: "GROUP_INVITATION",
+  GROUP_INVITATION_ACCEPTED: "GROUP_INVITATION_ACCEPTED",
   GROUP_JOIN: "GROUP_JOIN",
   SYSTEM: "SYSTEM",
   SUPPORT_ACCEPTED: "SUPPORT_ACCEPTED",
@@ -25,7 +26,8 @@ export const NOTIFICATION_MESSAGES = Object.freeze({
   UNREAD_COUNT_RETRIEVED:
     "Nombre de notifications non lues récupéré avec succès.",
   MARKED_AS_READ: "Notification marquée comme lue.",
-  ALL_MARKED_AS_READ: "Toutes les notifications ont été marquées comme lues.",
+  ALL_MARKED_AS_READ:
+    "Toutes les notifications ont été marquées comme lues.",
   DELETED: "Notification supprimée avec succès.",
   NOT_FOUND: "Notification introuvable.",
   INVALID_FILTER: "Les filtres de notifications sont invalides.",

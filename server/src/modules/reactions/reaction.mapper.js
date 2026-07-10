@@ -1,5 +1,7 @@
 export function toReactionUser(user) {
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
   return {
     id: user.id,

@@ -30,31 +30,24 @@ export const GROUP_MESSAGES = Object.freeze({
   JOINED: "Vous avez rejoint le groupe avec succès.",
   LEFT: "Vous avez quitté le groupe avec succès.",
 
-  MEMBERS_LISTED:
-    "Membres du groupe récupérés avec succès.",
+  MEMBERS_LISTED: "Membres du groupe récupérés avec succès.",
 
-  MEMBER_ROLE_UPDATED:
-    "Rôle du membre modifié avec succès.",
+  MEMBER_ROLE_UPDATED: "Rôle du membre modifié avec succès.",
 
-  MEMBER_REMOVED:
-    "Membre retiré du groupe avec succès.",
+  MEMBER_REMOVED: "Membre retiré du groupe avec succès.",
 
   NOT_FOUND: "Groupe introuvable.",
 
-  MEMBER_NOT_FOUND:
-    "Membre introuvable dans ce groupe.",
+  MEMBER_NOT_FOUND: "Membre introuvable dans ce groupe.",
 
-  ALREADY_MEMBER:
-    "Vous êtes déjà membre de ce groupe.",
+  ALREADY_MEMBER: "Vous êtes déjà membre de ce groupe.",
 
   PRIVATE_GROUP:
     "Ce groupe est privé et ne peut pas être rejoint directement.",
 
-  NOT_MEMBER:
-    "Vous n'êtes pas membre de ce groupe.",
+  NOT_MEMBER: "Vous n'êtes pas membre de ce groupe.",
 
-  FORBIDDEN:
-    "Vous n'êtes pas autorisé à effectuer cette action.",
+  FORBIDDEN: "Vous n'êtes pas autorisé à effectuer cette action.",
 
   OWNER_CANNOT_LEAVE:
     "Le propriétaire ne peut pas quitter le groupe sans transférer la propriété.",
@@ -71,6 +64,5 @@ export const GROUP_MESSAGES = Object.freeze({
 
 export const GROUP_NOTIFICATION = Object.freeze({
   JOIN_TITLE: "Nouveau membre",
-  JOIN_MESSAGE:
-    "Une personne a rejoint votre groupe.",
+  JOIN_MESSAGE: "Une personne a rejoint votre groupe.",
 });

@@ -41,42 +41,28 @@ export const ADMIN_MESSAGES = Object.freeze({
   STATISTICS_FETCHED:
     "Statistiques administratives récupérées avec succès.",
 
-  USERS_LISTED:
-    "Utilisateurs récupérés avec succès.",
-  USER_FETCHED:
-    "Utilisateur récupéré avec succès.",
-  USER_ROLE_UPDATED:
-    "Rôle utilisateur mis à jour avec succès.",
-  USER_STATUS_UPDATED:
-    "Statut utilisateur mis à jour avec succès.",
+  USERS_LISTED: "Utilisateurs récupérés avec succès.",
+  USER_FETCHED: "Utilisateur récupéré avec succès.",
+  USER_ROLE_UPDATED: "Rôle utilisateur mis à jour avec succès.",
+  USER_STATUS_UPDATED: "Statut utilisateur mis à jour avec succès.",
 
-  POSTS_LISTED:
-    "Publications récupérées avec succès.",
+  POSTS_LISTED: "Publications récupérées avec succès.",
   POST_STATUS_UPDATED:
     "Statut de la publication mis à jour avec succès.",
 
-  GROUPS_LISTED:
-    "Groupes récupérés avec succès.",
-  GROUP_DELETED:
-    "Groupe supprimé avec succès.",
+  GROUPS_LISTED: "Groupes récupérés avec succès.",
+  GROUP_DELETED: "Groupe supprimé avec succès.",
 
-  REPORTS_LISTED:
-    "Signalements récupérés avec succès.",
-  ACTIONS_LISTED:
-    "Actions administratives récupérées avec succès.",
+  REPORTS_LISTED: "Signalements récupérés avec succès.",
+  ACTIONS_LISTED: "Actions administratives récupérées avec succès.",
 
-  FORBIDDEN:
-    "Accès réservé aux administrateurs.",
-  USER_NOT_FOUND:
-    "Utilisateur introuvable.",
-  POST_NOT_FOUND:
-    "Publication introuvable.",
-  GROUP_NOT_FOUND:
-    "Groupe introuvable.",
+  FORBIDDEN: "Accès réservé aux administrateurs.",
+  USER_NOT_FOUND: "Utilisateur introuvable.",
+  POST_NOT_FOUND: "Publication introuvable.",
+  GROUP_NOT_FOUND: "Groupe introuvable.",
   CANNOT_MODIFY_SELF:
     "Vous ne pouvez pas modifier votre propre rôle ou statut depuis cette route.",
   LAST_ACTIVE_ADMIN:
     "Cette opération laisserait HealSpace sans administrateur actif.",
-  INVALID_FILTERS:
-    "Les filtres administratifs sont invalides.",
+  INVALID_FILTERS: "Les filtres administratifs sont invalides.",
 });

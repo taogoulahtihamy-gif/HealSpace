@@ -80,10 +80,7 @@ export async function findModerationReportById(reportId) {
   });
 }
 
-export async function startReportReview({
-  reportId,
-  moderatorId,
-}) {
+export async function startReportReview({ reportId, moderatorId }) {
   return prisma.$transaction(async (transaction) => {
     const result = await transaction.report.updateMany({
       where: {

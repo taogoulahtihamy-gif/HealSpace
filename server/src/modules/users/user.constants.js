@@ -2,14 +2,17 @@ export const USER_MESSAGES = Object.freeze({
   PROFILE_FETCHED: "Profil récupéré avec succès.",
   PROFILE_UPDATED: "Profil mis à jour avec succès.",
   PUBLIC_PROFILE_FETCHED: "Profil public récupéré avec succès.",
+  USERS_SEARCHED: "Utilisateurs recherchés avec succès.",
   PASSWORD_UPDATED: "Mot de passe modifié avec succès.",
-  PRIVACY_UPDATED: "Paramètres de confidentialité mis à jour avec succès.",
+  PRIVACY_UPDATED:
+    "Paramètres de confidentialité mis à jour avec succès.",
   ACCOUNT_DEACTIVATED: "Compte désactivé avec succès.",
 
   NOT_FOUND: "Utilisateur introuvable.",
   PRIVATE_PROFILE: "Ce profil n'est pas accessible.",
   USERNAME_ALREADY_EXISTS: "Ce nom d'utilisateur est déjà utilisé.",
   CURRENT_PASSWORD_INVALID: "Le mot de passe actuel est incorrect.",
+  INVALID_SEARCH: "Les paramètres de recherche sont invalides.",
 });
 
 export const USER_LIMITS = Object.freeze({
@@ -28,6 +31,12 @@ export const USER_LIMITS = Object.freeze({
   URL_MAX: 2048,
   PASSWORD_MIN: 8,
   PASSWORD_MAX: 128,
+
+  SEARCH_MIN: 2,
+  SEARCH_MAX: 80,
+  SEARCH_DEFAULT_PAGE: 1,
+  SEARCH_DEFAULT_LIMIT: 20,
+  SEARCH_MAX_LIMIT: 50,
 });
 
 export const USER_VISIBILITIES = Object.freeze({

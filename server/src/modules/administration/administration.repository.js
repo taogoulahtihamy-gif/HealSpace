@@ -429,10 +429,7 @@ export async function updateAdminPostStatus({
       },
       data: {
         status,
-        deletedAt:
-          status === "DELETED"
-            ? new Date()
-            : null,
+        deletedAt: status === "DELETED" ? new Date() : null,
       },
       include: adminPostInclude,
     });
@@ -508,10 +505,7 @@ export async function findAdminGroupById(groupId) {
   });
 }
 
-export async function deleteAdminGroup({
-  administratorId,
-  group,
-}) {
+export async function deleteAdminGroup({ administratorId, group }) {
   return prisma.$transaction(async (transaction) => {
     await transaction.group.delete({
       where: {
@@ -523,8 +517,7 @@ export async function deleteAdminGroup({
       data: {
         moderatorId: administratorId,
         action: "GROUP_DELETED",
-        note:
-          "Suppression administrative d'un groupe.",
+        note: "Suppression administrative d'un groupe.",
         metadata: {
           groupId: group.id,
           groupName: group.name,

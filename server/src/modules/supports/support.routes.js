@@ -16,35 +16,19 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.post(
-  "/",
-  validate(createSupportSchema),
-  createSupportRequest,
-);
+router.post("/", validate(createSupportSchema), createSupportRequest);
 
 router.get("/", listAvailableSupportRequests);
 
 // Cette route statique doit rester avant "/:supportRequestId".
 router.get("/mine", listMySupportRequests);
 
-router.get(
-  "/:supportRequestId",
-  getSupportRequestById,
-);
+router.get("/:supportRequestId", getSupportRequestById);
 
-router.patch(
-  "/:supportRequestId/accept",
-  acceptSupportRequest,
-);
+router.patch("/:supportRequestId/accept", acceptSupportRequest);
 
-router.patch(
-  "/:supportRequestId/complete",
-  completeSupportRequest,
-);
+router.patch("/:supportRequestId/complete", completeSupportRequest);
 
-router.patch(
-  "/:supportRequestId/cancel",
-  cancelSupportRequest,
-);
+router.patch("/:supportRequestId/cancel", cancelSupportRequest);
 
 export default router;

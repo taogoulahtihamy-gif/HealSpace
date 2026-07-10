@@ -13,6 +13,12 @@ export const getMyProfile = asyncHandler(async (req, res) => {
   );
 });
 
+export const searchUsers = asyncHandler(async (req, res) => {
+  const result = await userService.searchUsers(req.user.id, req.query);
+
+  return ApiResponse.success(res, result, USER_MESSAGES.USERS_SEARCHED);
+});
+
 export const getPublicProfile = asyncHandler(async (req, res) => {
   const profile = await userService.getPublicProfile(
     req.user.id,
@@ -55,18 +61,11 @@ export const updatePrivacy = asyncHandler(async (req, res) => {
 export const changePassword = asyncHandler(async (req, res) => {
   await userService.changePassword(req.user.id, req.body);
 
-  return ApiResponse.success(
-    res,
-    null,
-    USER_MESSAGES.PASSWORD_UPDATED,
-  );
+  return ApiResponse.success(res, null, USER_MESSAGES.PASSWORD_UPDATED);
 });
 
 export const deactivateAccount = asyncHandler(async (req, res) => {
-  await userService.deactivateAccount(
-    req.user.id,
-    req.body.password,
-  );
+  await userService.deactivateAccount(req.user.id, req.body.password);
 
   return ApiResponse.success(
     res,
