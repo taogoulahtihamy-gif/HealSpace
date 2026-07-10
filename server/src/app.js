@@ -36,9 +36,9 @@ app.use(requestLoggerMiddleware);
 
 /*
 |--------------------------------------------------------------------------
-| Public root route
+| Route racine publique
 |--------------------------------------------------------------------------
-| Évite le 404 sur la racine Render :
+| Évite le 404 quand Render ouvre :
 | https://healspace-523w.onrender.com/
 */
 app.get("/", (req, res) => {
@@ -52,10 +52,43 @@ app.get("/", (req, res) => {
 
 /*
 |--------------------------------------------------------------------------
-| Swagger documentation
+| Sécurité spécifique Swagger
 |--------------------------------------------------------------------------
-| Swagger UI doit être monté avant Helmet.
-| Sinon Helmet peut bloquer les scripts/styles nécessaires à l'affichage.
+| Swagger UI utilise ses propres fichiers JS/CSS.
+| En production, une Content Security Policy trop stricte peut afficher
+| une page blanche. Cette règle ne s'applique qu'à /api/docs.
+*/
+function swaggerDocsSecurityMiddleware(req, res, next) {
+  res.setHeader(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data:",
+      "font-src 'self' data:",
+      "connect-src 'self'",
+    ].join("; "),
+  );
+
+  res.setHeader(
+    "Cross-Origin-Resource-Policy",
+    "same-origin",
+  );
+
+  next();
+}
+
+app.use(
+  "/api/docs",
+  swaggerDocsSecurityMiddleware,
+);
+
+/*
+|--------------------------------------------------------------------------
+| Documentation Swagger
+|--------------------------------------------------------------------------
+| Swagger est monté avant Helmet pour éviter que Helmet bloque Swagger UI.
 */
 setupSwagger(app);
 
@@ -97,7 +130,10 @@ app.use(
   emailVerificationRateLimiter,
 );
 
-app.use("/api/media/upload", mediaUploadRateLimiter);
+app.use(
+  "/api/media/upload",
+  mediaUploadRateLimiter,
+);
 
 if (env.SECURITY_TEST_MODE) {
   app.get("/api/__security-test/error", () => {
