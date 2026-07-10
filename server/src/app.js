@@ -2,7 +2,10 @@ import express from "express";
 import cookieParser from "cookie-parser";
 
 import { env } from "./config/env.js";
-import { corsMiddleware, helmetMiddleware } from "./config/security.js";
+import {
+  corsMiddleware,
+  helmetMiddleware,
+} from "./config/security.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { notFoundMiddleware } from "./middlewares/not-found.middleware.js";
 import {
@@ -30,6 +33,31 @@ if (env.TRUST_PROXY_HOPS > 0) {
 app.use(requestContextMiddleware);
 
 app.use(requestLoggerMiddleware);
+
+/*
+|--------------------------------------------------------------------------
+| Public root route
+|--------------------------------------------------------------------------
+| Évite le 404 sur la racine Render :
+| https://healspace-523w.onrender.com/
+*/
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "HealSpace API is live",
+    health: "/api/health",
+    docs: "/api/docs",
+  });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Swagger documentation
+|--------------------------------------------------------------------------
+| Swagger UI doit être monté avant Helmet.
+| Sinon Helmet peut bloquer les scripts/styles nécessaires à l'affichage.
+*/
+setupSwagger(app);
 
 app.use(helmetMiddleware);
 app.use(corsMiddleware);
@@ -59,7 +87,10 @@ app.use("/api/auth/register", registerRateLimiter);
 
 app.use("/api/auth/refresh", refreshRateLimiter);
 
-app.use("/api/auth/forgot-password", passwordResetRateLimiter);
+app.use(
+  "/api/auth/forgot-password",
+  passwordResetRateLimiter,
+);
 
 app.use(
   "/api/auth/email-verification/send",
@@ -68,11 +99,11 @@ app.use(
 
 app.use("/api/media/upload", mediaUploadRateLimiter);
 
-setupSwagger(app);
-
 if (env.SECURITY_TEST_MODE) {
   app.get("/api/__security-test/error", () => {
-    throw new Error("SENSITIVE_INTERNAL_SECURITY_TEST_MESSAGE");
+    throw new Error(
+      "SENSITIVE_INTERNAL_SECURITY_TEST_MESSAGE",
+    );
   });
 }
 
