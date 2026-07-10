@@ -2,7 +2,7 @@ services:
   - type: web
     name: healspace-api
     runtime: node
-    plan: starter
+    plan: free
     rootDir: server
     buildCommand: npm ci && npx prisma generate
     startCommand: sh scripts/render-start.sh
