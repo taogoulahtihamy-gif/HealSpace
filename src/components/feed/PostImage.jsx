@@ -1,29 +1,110 @@
-import { Maximize2 } from "lucide-react";
-import { POST_IMAGES } from "../../utils/constants.js";
+import { Expand, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
-/** Affiche soit une vraie image uploadée (data URL), soit un dégradé prédéfini. */
-export default function PostImage({ imageId, onExpandPlaceholder }) {
-  if (!imageId) return null;
+import "../../styles/post-media.css";
 
-  const isRealImage = typeof imageId === "string" && imageId.startsWith("data:");
-  const preset = isRealImage ? null : POST_IMAGES.find((option) => option.id === imageId);
-  if (!isRealImage && !preset) return null;
-
+function isImageSource(value) {
   return (
-    <div className="post-image-frame">
-      {isRealImage ? (
-        <img src={imageId} alt="" className="post-image post-image-real" />
-      ) : (
-        <div className={`post-image ${preset.className}`} aria-hidden="true" />
-      )}
+    typeof value === "string" &&
+    (
+      value.startsWith("http://") ||
+      value.startsWith("https://") ||
+      value.startsWith("data:image/") ||
+      value.startsWith("blob:")
+    )
+  );
+}
+
+export default function PostImage({
+  imageId,
+  imageUrl,
+  alt = "Image de la publication",
+  onExpandPlaceholder,
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const source = imageUrl || imageId;
+
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    function handleEscape(event) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [isOpen]);
+
+  if (!source) {
+    return null;
+  }
+
+  if (!isImageSource(source)) {
+    return (
       <button
         type="button"
-        className="post-image-expand-btn"
-        aria-label="Agrandir l’image (bientôt disponible)"
-        onClick={() => onExpandPlaceholder?.()}
+        className="post-image-placeholder"
+        onClick={onExpandPlaceholder}
       >
-        <Maximize2 size={16} />
+        Image jointe
       </button>
-    </div>
+    );
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        className="post-image-adaptive"
+        onClick={() => setIsOpen(true)}
+      >
+        <img src={source} alt={alt} loading="lazy" />
+
+        <span className="post-image-expand-button">
+          <Expand size={16} />
+        </span>
+      </button>
+
+      {isOpen &&
+        createPortal(
+          <div
+            className="post-image-viewer"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setIsOpen(false)}
+          >
+            <button
+              type="button"
+              className="post-image-viewer-close"
+              onClick={() => setIsOpen(false)}
+              aria-label="Fermer l'image"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="post-image-viewer-frame">
+              <img
+                src={source}
+                alt={alt}
+                onClick={(event) => event.stopPropagation()}
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }

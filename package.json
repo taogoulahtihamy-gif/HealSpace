@@ -1,11 +1,11 @@
 {
-  "name": "healspace-backend",
+  "name": "healspace-frontend",
   "version": "1.0.0",
   "description": "Backend API for HealSpace",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "dev": "nodemon src/server.js",
+    "dev": "vite",
     "start": "node src/server.js",
     "test:api": "node scripts/test-api.js",
     "test:password-reset": "node scripts/test-password-reset.js",
@@ -26,7 +26,7 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "lint": "echo \"Lint not configured yet\"",
+    "lint": "echo \"Frontend lint not configured yet\"",
     "test": "echo \"No tests yet\"",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
@@ -37,7 +37,9 @@
     "docker:test:realtime": "docker compose exec api npm run test:realtime",
     "docker:test:docs": "docker compose exec api npm run test:docs",
     "docker:test:all": "docker compose exec api npm run test:all",
-    "docker:db:reset": "docker compose exec api npx prisma migrate reset --force"
+    "docker:db:reset": "docker compose exec api npx prisma migrate reset --force",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "keywords": [
     "healspace",
@@ -53,6 +55,7 @@
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^6.10.1",
+    "@vitejs/plugin-react": "^6.0.3",
     "bcrypt": "^6.0.0",
     "cloudinary": "2.10.0",
     "cookie-parser": "^1.4.7",
@@ -62,12 +65,17 @@
     "express-rate-limit": "8.5.2",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^1.24.0",
     "morgan": "^1.10.1",
     "multer": "2.2.0",
     "nodemailer": "^9.0.3",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.18.1",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "swagger-ui-express": "^5.0.1",
+    "vite": "^8.1.4",
     "zod": "^4.0.14"
   },
   "devDependencies": {
@@ -76,5 +84,6 @@
   },
   "engines": {
     "node": ">=20.0.0"
-  }
+  },
+  "private": "true"
 }

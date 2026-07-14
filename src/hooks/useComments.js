@@ -1,63 +1,140 @@
-import { useCallback, useEffect, useState } from "react";
-import { commentService } from "../services/commentService.js";
-import { useNotifications } from "./useNotifications.js";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
-/**
- * Gère les commentaires d'une publication précise, avec persistance
- * (aujourd'hui localStorage via commentService, demain une vraie API —
- * le hook n'aurait alors qu'à attendre une réponse serveur au lieu d'une
- * réponse locale, sans changer son interface).
- *
- * Usage dans un composant :
- *   const { comments, addComment, updateComment, deleteComment } = useComments(post.id);
- */
+import {
+  createPostComment,
+  deletePostComment,
+  getPostComments,
+  updatePostComment,
+} from "../services/api/comments.api.js";
+import {
+  extractCommentContent,
+  mapApiCommentToUiComment,
+  mapApiCommentsToUiComments,
+} from "../services/api/comment.mapper.js";
+
+function getResponseData(response) {
+  return response?.data || response?.comment || response;
+}
+
 export function useComments(postId) {
   const [comments, setComments] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { notify } = useNotifications();
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [commentsError, setCommentsError] = useState(null);
 
-  // Charge les commentaires déjà enregistrés au montage (ex: après un
-  // rechargement de page), pour que la liste reste visible.
-  useEffect(() => {
-    let isMounted = true;
-    setIsLoading(true);
+  const loadComments = useCallback(async () => {
+    if (!postId) {
+      setComments([]);
+      return [];
+    }
 
-    commentService.getComments(postId).then((list) => {
-      if (isMounted) {
-        setComments(list);
-        setIsLoading(false);
-      }
-    });
+    try {
+      setIsLoadingComments(true);
+      setCommentsError(null);
 
-    return () => {
-      isMounted = false;
-    };
+      const response = await getPostComments(postId);
+      const mappedComments = mapApiCommentsToUiComments(response);
+
+      setComments(mappedComments);
+      return mappedComments;
+    } catch (error) {
+      setCommentsError(error);
+      return [];
+    } finally {
+      setIsLoadingComments(false);
+    }
   }, [postId]);
 
+  useEffect(() => {
+    loadComments();
+  }, [loadComments]);
+
   const addComment = useCallback(
-    async (payload) => {
-      const updatedComments = await commentService.addComment(postId, payload);
-      setComments(updatedComments);
-      notify("Commentaire ajouté 💬", "comment");
+    async (value) => {
+      const content = extractCommentContent(value);
+
+      if (!content) {
+        return null;
+      }
+
+      const response = await createPostComment(postId, {
+        content,
+        parentId: value?.parentId || undefined,
+      });
+
+      const createdComment = mapApiCommentToUiComment(
+        getResponseData(response),
+      );
+
+      setComments((current) => [
+        ...current,
+        createdComment,
+      ]);
+
+      return createdComment;
     },
-    [postId, notify]
+    [postId],
   );
 
   const updateComment = useCallback(
-    async (commentId, newText) => {
-      const updatedComments = await commentService.updateComment(postId, commentId, newText);
-      setComments(updatedComments);
+    async (commentId, value) => {
+      const content = extractCommentContent(value);
+
+      if (!content) {
+        return null;
+      }
+
+      const response = await updatePostComment(commentId, {
+        content,
+      });
+
+      const updatedComment = mapApiCommentToUiComment(
+        getResponseData(response),
+      );
+
+      setComments((current) =>
+        current.map((comment) =>
+          comment.id === commentId
+            ? updatedComment
+            : comment,
+        ),
+      );
+
+      return updatedComment;
     },
-    [postId]
+    [],
   );
 
-  const deleteComment = useCallback(
-    async (commentId) => {
-      const updatedComments = await commentService.deleteComment(postId, commentId);
-      setComments(updatedComments);
-    },
-    [postId]
-  );
+  const deleteComment = useCallback(async (commentId) => {
+    await deletePostComment(commentId);
 
-  return { comments, addComment, updateComment, deleteComment, isLoading };
+    setComments((current) =>
+      current.filter((comment) => comment.id !== commentId),
+    );
+  }, []);
+
+  return useMemo(
+    () => ({
+      comments,
+      isLoadingComments,
+      commentsError,
+      loadComments,
+      addComment,
+      updateComment,
+      deleteComment,
+    }),
+    [
+      comments,
+      isLoadingComments,
+      commentsError,
+      loadComments,
+      addComment,
+      updateComment,
+      deleteComment,
+    ],
+  );
 }

@@ -1,5 +1,9 @@
-import { memo, useState } from "react";
-import Avatar from "../common/Avatar.jsx";
+import {
+  memo,
+  useEffect,
+  useState,
+} from "react";
+
 import HighlightText from "../common/HighlightText.jsx";
 import Badge from "../ui/Badge.jsx";
 import ConfirmDialog from "../ui/ConfirmDialog.jsx";
@@ -16,11 +20,12 @@ import { usePosts } from "../../hooks/usePosts.js";
 import { useDisclosure } from "../../hooks/useDisclosure.js";
 import { useNotifications } from "../../hooks/useNotifications.js";
 import { parseCount } from "../../utils/formatters.js";
-import { STORAGE_KEYS, MOOD_COLOR_BY_EMOJI } from "../../utils/constants.js";
+import {
+  MOOD_COLOR_BY_EMOJI,
+  STORAGE_KEYS,
+} from "../../utils/constants.js";
+import "../../styles/post-media.css";
 
-// Petites fonctions locales de persistance (lecture/écriture directe de
-// localStorage), gardées dans ce composant plutôt que dans un nouveau
-// service, sur le même format que likeService/groupService (Set sérialisé).
 function readIdSet(key) {
   try {
     const raw = window.localStorage.getItem(key);
@@ -32,39 +37,105 @@ function readIdSet(key) {
 
 function toggleIdInSet(key, id) {
   const set = readIdSet(key);
+
   if (set.has(id)) {
     set.delete(id);
   } else {
     set.add(id);
   }
-  window.localStorage.setItem(key, JSON.stringify(Array.from(set)));
+
+  window.localStorage.setItem(
+    key,
+    JSON.stringify(Array.from(set)),
+  );
+
   return set;
 }
 
-// Durée de l'animation de suppression douce avant que le post ne disparaisse
-// réellement du feed (cf. handleConfirmDelete plus bas).
+function isImageSource(value) {
+  return (
+    typeof value === "string" &&
+    (
+      value.startsWith("http://") ||
+      value.startsWith("https://") ||
+      value.startsWith("data:image/") ||
+      value.startsWith("blob:")
+    )
+  );
+}
+
+function FeedAvatar({ initial, imageUrl, name }) {
+  if (isImageSource(imageUrl)) {
+    return (
+      <span className="feed-avatar feed-avatar-image">
+        <img src={imageUrl} alt={name || "Profil"} />
+      </span>
+    );
+  }
+
+  return (
+    <span className="feed-avatar">
+      {initial || "?"}
+    </span>
+  );
+}
+
 const DELETE_ANIMATION_MS = 260;
+
+function getCurrentUserName(user) {
+  const fullName = [
+    user?.firstName,
+    user?.lastName,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+
+  return fullName || user?.username || "Toi";
+}
 
 function SharedPostPreview({ sharedFrom }) {
   return (
     <div className="shared-post-preview">
       <div className="shared-post-preview-header">
-        <Avatar initial={sharedFrom.avatar} />
+        <FeedAvatar
+          initial={sharedFrom.avatar}
+          imageUrl={sharedFrom.avatarUrl}
+          name={sharedFrom.author}
+        />
         <strong>{sharedFrom.author}</strong>
       </div>
+
       <p>
         <span>{sharedFrom.mood}</span> {sharedFrom.content}
       </p>
+
       <PostImage imageId={sharedFrom.image} />
     </div>
   );
 }
 
 function PostCard({ post, highlight = "" }) {
-  const { isLiked, toggleLike } = useLikes();
-  const { comments, addComment, updateComment, deleteComment } = useComments(post.id);
+  const {
+    isLiked,
+    toggleLike,
+    loadReactionState,
+    getSupportCount,
+  } = useLikes();
+
+  const {
+    comments,
+    addComment,
+    updateComment,
+    deleteComment,
+  } = useComments(post.id);
+
   const { user } = useAuth();
-  const { updatePost, deletePost, sharePost } = usePosts();
+  const {
+    updatePost,
+    deletePost,
+    sharePost,
+  } = usePosts();
   const { notify } = useNotifications();
 
   const menu = useDisclosure(false);
@@ -74,62 +145,128 @@ function PostCard({ post, highlight = "" }) {
 
   const [isPopping, setIsPopping] = useState(false);
   const [showComments, setShowComments] = useState(false);
-  const [isSaved, setIsSaved] = useState(() => readIdSet(STORAGE_KEYS.SAVED_POSTS).has(post.id));
-  const [isHidden, setIsHidden] = useState(() => readIdSet(STORAGE_KEYS.HIDDEN_POSTS).has(post.id));
+  const [isSaved, setIsSaved] = useState(() =>
+    readIdSet(STORAGE_KEYS.SAVED_POSTS).has(post.id),
+  );
+  const [isHidden, setIsHidden] = useState(() =>
+    readIdSet(STORAGE_KEYS.HIDDEN_POSTS).has(post.id),
+  );
   const [isDeleting, setIsDeleting] = useState(false);
 
+  useEffect(() => {
+    loadReactionState(post.id, user?.id);
+  }, [loadReactionState, post.id, user?.id]);
+
   const liked = isLiked(post.id);
-  const supportCount = parseCount(post.support) + (liked ? 1 : 0);
-  const commentCount = post.comments + comments.length;
+  const supportCount = getSupportCount(
+    post.id,
+    parseCount(post.support),
+  );
+  const commentCount = comments.length || post.comments || 0;
 
   const isOwner = Boolean(post.ownerId) && post.ownerId === user?.id;
   const moodColor = MOOD_COLOR_BY_EMOJI[post.mood];
 
-  function handleSupportClick() {
-    toggleLike(post.id);
-    setIsPopping(true);
-    window.setTimeout(() => setIsPopping(false), 260);
+  async function handleSupportClick() {
+    try {
+      await toggleLike(post.id);
+      setIsPopping(true);
+      window.setTimeout(() => setIsPopping(false), 260);
+    } catch {
+      notify(
+        "Le soutien n'a pas pu être enregistré.",
+        "error",
+      );
+    }
   }
 
-  function handleAddComment(text) {
-    addComment({
-      text,
-      author: user?.name || "Toi",
-      avatar: user?.initial || "T",
-    });
+  async function handleAddComment(text) {
+    try {
+      await addComment({
+        text,
+        author: getCurrentUserName(user),
+        avatar:
+          user?.username?.[0]?.toUpperCase() ||
+          getCurrentUserName(user)[0] ||
+          "T",
+        avatarUrl: user?.avatar || null,
+      });
+    } catch {
+      notify(
+        "Le commentaire n'a pas pu être envoyé.",
+        "error",
+      );
+    }
   }
 
-  function handleSaveEdit(newContent) {
-    updatePost(post.id, { content: newContent });
-    editModal.close();
+  async function handleSaveEdit(newContent) {
+    try {
+      await updatePost(post.id, {
+        content: newContent,
+      });
+
+      editModal.close();
+    } catch {
+      notify(
+        "La modification n'a pas pu être enregistrée.",
+        "error",
+      );
+    }
   }
 
   function handleConfirmDelete() {
     deleteDialog.close();
-    // Animation de suppression douce : on laisse la carte s'estomper avant
-    // de retirer réellement le post du feed (PostsContext.deletePost).
     setIsDeleting(true);
-    window.setTimeout(() => deletePost(post.id), DELETE_ANIMATION_MS);
+
+    window.setTimeout(
+      () => deletePost(post.id),
+      DELETE_ANIMATION_MS,
+    );
   }
 
   function handleShareInHealSpace(comment) {
-    sharePost(post.id, { author: user, comment });
+    sharePost(post.id, {
+      author: user,
+      comment,
+    });
+
     shareModal.close();
   }
 
   function handleToggleSave() {
-    const updated = toggleIdInSet(STORAGE_KEYS.SAVED_POSTS, post.id);
+    const updated = toggleIdInSet(
+      STORAGE_KEYS.SAVED_POSTS,
+      post.id,
+    );
+
     const nowSaved = updated.has(post.id);
+
     setIsSaved(nowSaved);
-    notify(nowSaved ? "Publication enregistrée 🔖" : "Retirée de tes enregistrements", "info");
+
+    notify(
+      nowSaved
+        ? "Publication enregistrée"
+        : "Retirée de tes enregistrements",
+      "info",
+    );
+
     menu.close();
   }
 
   function handleCopyLink() {
-    const fakeLink = `https://healspace.app/post/${post.id}`;
+    const link = `${window.location.origin}/post/${post.id}`;
+
     if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(fakeLink).then(() => notify("Lien copié dans le presse-papiers", "info"));
+      navigator.clipboard
+        .writeText(link)
+        .then(() =>
+          notify(
+            "Lien copié dans le presse-papiers",
+            "info",
+          ),
+        );
     }
+
     menu.close();
   }
 
@@ -145,12 +282,16 @@ function PostCard({ post, highlight = "" }) {
   }
 
   function handleReport() {
-    notify("Signalement envoyé. Notre équipe va l’examiner. 🙏", "info");
+    notify(
+      "Signalement envoyé. Notre équipe va l’examiner.",
+      "info",
+    );
+
     menu.close();
   }
 
   function handleExpandImagePlaceholder() {
-    notify("L’agrandissement d’image arrive bientôt 🖼️", "info");
+    notify("Cette image n’est pas encore disponible.", "info");
   }
 
   if (isHidden) {
@@ -165,14 +306,25 @@ function PostCard({ post, highlight = "" }) {
   }
 
   return (
-    <article className={`post-card post-card-animated ${isDeleting ? "post-card-deleting" : ""}`.trim()}>
+    <article
+      className={`post-card post-card-animated ${
+        isDeleting ? "post-card-deleting" : ""
+      }`.trim()}
+    >
       <div className="post-header">
-        <Avatar initial={post.avatar} />
+        <FeedAvatar
+          initial={post.avatar}
+          imageUrl={post.avatarUrl}
+          name={post.author}
+        />
+
         <div>
           <strong>{post.author}</strong>
           <div className="post-header-badges">
             <Badge variant="soft">{post.group}</Badge>
-            {moodColor && <Badge color={moodColor}>{post.mood}</Badge>}
+            {moodColor && (
+              <Badge color={moodColor}>{post.mood}</Badge>
+            )}
             <span className="post-time">{post.time}</span>
           </div>
         </div>
@@ -198,9 +350,15 @@ function PostCard({ post, highlight = "" }) {
         />
       </div>
 
-      <p className="post-content"><HighlightText text={post.content} query={highlight} /></p>
+      <p className="post-content">
+        <HighlightText text={post.content} query={highlight} />
+      </p>
 
-      <PostImage imageId={post.image} onExpandPlaceholder={handleExpandImagePlaceholder} />
+      <PostImage
+        imageId={post.image}
+        alt={`Image publiée par ${post.author}`}
+        onExpandPlaceholder={handleExpandImagePlaceholder}
+      />
 
       {post.challenge && (
         <Badge variant="solid" color="#8b5cf6">
@@ -208,7 +366,9 @@ function PostCard({ post, highlight = "" }) {
         </Badge>
       )}
 
-      {post.sharedFrom && <SharedPostPreview sharedFrom={post.sharedFrom} />}
+      {post.sharedFrom && (
+        <SharedPostPreview sharedFrom={post.sharedFrom} />
+      )}
 
       <PostActions
         supportCount={supportCount}
@@ -218,7 +378,9 @@ function PostCard({ post, highlight = "" }) {
         isPopping={isPopping}
         onSupportClick={handleSupportClick}
         showComments={showComments}
-        onToggleComments={() => setShowComments((value) => !value)}
+        onToggleComments={() =>
+          setShowComments((value) => !value)
+        }
         onShareClick={shareModal.open}
       />
 
@@ -263,6 +425,4 @@ function PostCard({ post, highlight = "" }) {
   );
 }
 
-// Évite les re-rendus inutiles de chaque carte quand seul un autre post
-// du feed change (ex: ajout d'une nouvelle publication en tête de liste).
 export default memo(PostCard);
